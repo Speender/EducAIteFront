@@ -1,8 +1,15 @@
 import React from 'react'
+import Header from './components/Header'
+import Search from './components/Search'
+import WeeklyPerformance from './components/WeeklyPerformance'
+import Flashcards from './components/Flashcards'
 
 const Main: React.FC = () => (
 	<div>
-		<h1>Main</h1>
+		<Header />
+        <Search />
+        <WeeklyPerformance />
+        <Flashcards />
 	</div>
 )
 
