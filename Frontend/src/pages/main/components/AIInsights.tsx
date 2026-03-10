@@ -2,25 +2,34 @@ import React from 'react';
 import ProgressBar from './ProgressBar';
 
 
-const AIInsights = () => {
+interface AIInsightsProps {
+    insights: any[]
+}
+
+
+const AIInsights = ({insights}: AIInsightsProps) => {
     return (
         <div className='border border-white rounded-md'>
             <h1>AI Insights</h1>
-
-            <Insight />
-            <Insight />
+            {insights.map(is => <Insight insight={is.insight} subject={is.subject} mastery={is.mastery}/>)}
         </div>
     );
 };
 
 
-const Insight = () => {
+interface InsightProps {
+    insight: string,
+    subject: string,
+    mastery: number
+}
+
+
+const Insight = ({insight, subject, mastery}: InsightProps) => {
     return (
         <h1>
-            <h2>Strength</h2>
-            <h1>Programming Languages</h1>
-
-            <ProgressBar title={"Mastery"} percentage={80}/>
+            <h2>{insight}</h2>
+            <h1>{subject}</h1>
+            <ProgressBar title={"Mastery"} percentage={mastery}/>
         </h1>
     )
 }

@@ -1,10 +1,17 @@
 import React from 'react'
 
-const Header = () => (
+
+interface Props {
+    name: string
+}
+
+
+const Header = ({name}: Props) => (
     <div>
-        <h1>Welcome back, Christian</h1>
+        <h1>Welcome back, {name}</h1>
         <h3>Your personalized AI dashboard - track your growth, progress, and insights.</h3>
     </div>
 )
+
 
 export default Header

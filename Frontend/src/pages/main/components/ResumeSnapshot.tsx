@@ -1,11 +1,17 @@
 import React from 'react';
 
-const ResumeSnapshot = () => {
+
+interface Props {
+    resumeCount: number
+}
+
+
+const ResumeSnapshot = ({resumeCount}: Props) => {
     return (
         <div className='border border-white rounded-md'>
             <h1>Resume Snapshot</h1>
 
-            2 new certifications added this semester
+            {resumeCount} new certifications added this semester
 
             <EditResumeBtn />
         </div>
@@ -13,6 +19,7 @@ const ResumeSnapshot = () => {
 };
 
 
+//route to resume page
 const EditResumeBtn = () => {
     return (
         <button className="ml-4 bg-white text-black rounded-full border border-white px-4 py-2 hover:bg-gray-200 transition">
