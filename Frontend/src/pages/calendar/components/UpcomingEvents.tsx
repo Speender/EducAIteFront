@@ -1,33 +1,32 @@
 import React from 'react';
 
-const eventsData = [
-    {
-        date: '03/05/2026',
-        event: 'React Conference 2026',
-    },
-    {
-        date: '04/10/2026',
-        event: 'Tech Workshop',
-    },
-    {
-        date: '05/15/2026',
-        event: 'Web Development Meetup',
-    },
-];
 
-const UpcomingEvents = () => {
+interface Props {
+    events: any[]
+}
+
+
+const UpcomingEvents = ({ events }: Props) => {
     return (
         <div className="bg-black text-white border border-white p-4 rounded-lg">
             <h2 className="text-xl font-bold mb-4">Upcoming Events</h2>
             <ul>
-                {eventsData.map((event, index) => (
+                {events.map((event, index) => (
                     <li key={index} className="flex items-center mb-2 border-b">
-                        <span>📅 {event.date} | {event.event}</span>
+                        <span>📅 {convertDate(event.date)} | {event.title}</span>
                     </li>
                 ))}
             </ul>
         </div>
     );
 };
+
+
+function convertDate(dateStr: string) {
+    const inputDate = new Date(dateStr);
+    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+    return inputDate.toLocaleDateString('en-US', options);
+}
+
 
 export default UpcomingEvents;
