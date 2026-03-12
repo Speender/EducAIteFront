@@ -1,4 +1,4 @@
-import React, { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useState } from 'react';
 
 
 const months = [
@@ -53,5 +53,6 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
         </div>
     );
 };
+
 
 export default MonthYearSelector;

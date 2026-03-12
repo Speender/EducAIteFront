@@ -8,7 +8,13 @@ import AddEventDialog from './components/AddEventDialog';
 import MonthYearSelector from './components/MonthYearSelector';
 
 
-const events = [
+interface Event {
+    date: string,
+    eventType: string,
+    title: string
+}
+
+const eventsData: Event[] = [
     { date: '2026-3-05', eventType: 'note', title: 'Buy Tshirt' },
     { date: '2026-3-12', eventType: 'event', title: 'Midterm' },
     { date: '2026-03-12', eventType: 'note', title: 'Bring calculator' },
@@ -31,13 +37,21 @@ const Calendar: React.FC = () => {
         setMonth(newMonth)
         setYear(newYear)
     }
+    const [dialogVisibility, setDialogVisibility] = useState(false)
+    const [events, updateEvents] = useState<any[]>(eventsData)
 
     const handleDialogClose = () => {
-
+        setDialogVisibility(false)
     }
 
-    const handleEventSave = () => {
-
+    const handleEventSave = (e: Event) => {
+        updateEvents(
+            [...events, {
+                date: e.date,
+                title: e.title,
+                eventType: e.eventType
+            }].sort((a: Event, b: Event) => new Date(a.date).getTime() - new Date(b.date).getTime())
+        )
     }
 
     return (
@@ -46,10 +60,10 @@ const Calendar: React.FC = () => {
             <Search />
             <MonthYearSelector month={currentMonth} year={currentYear} onDateChange={handleDateChange}/>
             <MainCalendar events={events} month={currentMonth} year={currentYear} />
-            <AddEvent />
+            <AddEvent onClick={() => setDialogVisibility(true)} />
             <SecondaryCalendar month={currentMonth} day={currentDay} year={currentYear} onDateChange={handleDateChange} />
             <UpcomingEvents events={events} />
-            <AddEventDialog isOpen={false} onClose={handleDialogClose} onSave={handleEventSave} />
+            <AddEventDialog isOpen={dialogVisibility} onClose={handleDialogClose} onSave={handleEventSave} />
         </div>
     )
 };

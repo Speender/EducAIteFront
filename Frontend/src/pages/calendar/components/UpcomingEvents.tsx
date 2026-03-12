@@ -24,8 +24,22 @@ const UpcomingEvents = ({ events }: Props) => {
 
 function convertDate(dateStr: string) {
     const inputDate = new Date(dateStr);
-    const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
-    return inputDate.toLocaleDateString('en-US', options);
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+
+    today.setHours(0, 0, 0, 0);
+    tomorrow.setHours(0, 0, 0, 0);
+    inputDate.setHours(0, 0, 0, 0);
+
+    if (inputDate.getTime() === today.getTime()) {
+        return 'Today';
+    } else if (inputDate.getTime() === tomorrow.getTime()) {
+        return 'Tomorrow';
+    } else {
+        const options: Intl.DateTimeFormatOptions = { month: 'short', day: 'numeric', year: 'numeric' };
+        return inputDate.toLocaleDateString('en-US', options);
+    }
 }
 
 

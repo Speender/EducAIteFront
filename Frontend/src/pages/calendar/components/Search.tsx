@@ -1,10 +1,10 @@
 import React from 'react';
 
+
 const Search = () => {
     return (
         <div className="flex items-center bg-black p-4 rounded-lg">
             <div className="flex items-center border border-white rounded-full">
-                {/* Magnifying Glass Icon */}
                 <div className="text-white mr-2 ml-3">🔎</div>
                 <input
                     type="text"
@@ -18,5 +18,6 @@ const Search = () => {
         </div>
     );
 };
+
 
 export default Search;

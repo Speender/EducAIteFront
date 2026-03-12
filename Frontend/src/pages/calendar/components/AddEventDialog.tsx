@@ -4,13 +4,14 @@ import React, { useState, type ChangeEvent } from 'react';
 interface Props {
     isOpen: boolean;
     onClose: () => void;
-    onSave: (eventData: { title: string }) => void;
+    onSave: (eventData: { title: string, date: string, eventType: string }) => void;
 }
 
 
 const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
     const [title, setTitle] = useState<string>('');
-    const [isCalendarVisible, setIsCalendarVisible] = useState<boolean>(false);
+    const [date, setDate] = useState<string>(dateToStr(new Date()))
+    const eventType = "event"
 
     if (!isOpen) return null;
 
@@ -18,11 +19,15 @@ const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
         setTitle(e.target.value);
     };
 
+    const handleDateChange = (e: ChangeEvent<HTMLInputElement>): void => {
+        setDate(e.target.value)
+    }
+
     const handleSave = (): void => {
-        if (!title.trim()) return; // Simple validation
-        onSave({ title });
+        if (!title.trim()) return;
+        onSave({ title, date, eventType });
         onClose();
-        setTitle(''); // Reset after save
+        setTitle('');
     };
 
     return (
@@ -34,11 +39,10 @@ const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
                 aria-modal="true"
             >
 
-                {/* Close Button (X) */}
+                {/* Close Button */}
                 <button
                     onClick={onClose}
                     className="absolute top-5 right-5 text-white/60 hover:text-white transition-colors"
-                    aria-label="Close dialog"
                 >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -61,14 +65,15 @@ const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
                         />
                     </div>
 
-                    {/* Calendar Toggle (Chevron Version) */}
+                    {/* cleanup later */}
+                    {/* Date select */}
                     <div className="flex flex-col">
-                        <button
+                        {/* <button
                             type="button"
                             onClick={() => setIsCalendarVisible(!isCalendarVisible)}
                             className="flex items-center justify-between w-full py-2 group hover:opacity-80 transition-opacity"
                         >
-                            <span className="text-white font-medium">Show Calendar</span>
+                            <span className="text-white font-medium">📅 {formatDate(new Date())}</span>
                             <svg
                                 xmlns="http://www.w3.org/2000/svg"
                                 className={`h-5 w-5 text-white transition-transform duration-300 ease-in-out ${isCalendarVisible ? 'rotate-180' : 'rotate-0'
@@ -79,14 +84,18 @@ const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
                             >
                                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                             </svg>
-                        </button>
+                        </button> */}
 
                         {/* Conditional Calendar Component */}
-                        {isCalendarVisible && (
-                            <div className="mt-2 border-t border-white/10 pt-4 animate-in fade-in slide-in-from-top-1 duration-200">
-                                {/* <Calendar /> */}
-                            </div>
-                        )}
+                        {/* {isCalendarVisible && ( */}
+                        {/* <div className="mt-2 border-t border-white/10 pt-4 animate-in fade-in slide-in-from-top-1 duration-200"> */}
+                        <input
+                            value={date}
+                            type="date"
+                            onChange={handleDateChange}
+                        />
+                        {/* </div> */}
+                        {/* )} */}
                     </div>
 
                     {/* Save Button */}
@@ -102,6 +111,14 @@ const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
         </div>
     );
 };
+
+
+function dateToStr(date: Date): string {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0'); // Months are zero-based
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+}
 
 
 export default AddEventDialog;
