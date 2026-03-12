@@ -10,7 +10,7 @@ interface Props {
 
 const WeeklyPerformance = ({goalAchieved, improvement}: Props) => {
     return (
-        <div className='border border-white rounded-md'>
+        <div className='border border-white rounded-md p-4'>
             <h1>Weekly Performance 📊</h1>
             <CircularProgressBar percentage={goalAchieved}/>
             <div>

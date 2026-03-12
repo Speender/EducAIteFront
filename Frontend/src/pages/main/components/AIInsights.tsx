@@ -9,7 +9,7 @@ interface AIInsightsProps {
 
 const AIInsights = ({insights}: AIInsightsProps) => {
     return (
-        <div className='border border-white rounded-md'>
+        <div className='border border-white rounded-md p-4'>
             <h1>AI Insights</h1>
             {insights.map(is => <Insight insight={is.insight} subject={is.subject} mastery={is.mastery}/>)}
         </div>

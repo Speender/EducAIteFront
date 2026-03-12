@@ -15,7 +15,7 @@ const Flashcards = ({ finished, total, streak }: Props) => {
 
 
     return (
-        <div className='border border-white rounded-md'>
+        <div className='border border-white rounded-md p-4'>
             <h1>Flashcards Today</h1>
             <h1>{finished} of {total} completed</h1>
             <ProgressBar title={percentCompletion + "%"} percentage={percentCompletion} />

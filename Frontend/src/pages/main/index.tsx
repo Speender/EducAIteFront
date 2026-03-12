@@ -40,17 +40,7 @@ const upcomingTasks = [
     },
 ]
 
-const resumeCerts = [
-    {
-        title: "Cert 1"
-    },
-    {
-        title: "Cert 1"
-    },
-    {
-        title: "Cert 1"
-    }
-]
+const resumeCertsCount = 3
 
 
 const aiInsights = [
@@ -73,15 +63,34 @@ const aiInsights = [
 
 
 const Main: React.FC = () => (
-	<div>
-		<Header name={name}/>
-        <Search />
-        <WeeklyPerformance goalAchieved={weeklyPerformance.goalAchieved} improvement={weeklyPerformance.improvement}/>
-        <Flashcards finished={flashCards.finished} total={flashCards.total} streak={flashCards.streak} />
-        <UpcomingTasks tasks={upcomingTasks} />
-        <ResumeSnapshot resumeCount={resumeCerts.length} />
-        <AIInsights insights={aiInsights} />
-	</div>
-)
+    <div className="flex flex-col items-center">
+        <div className="text-center mb-4">
+            <Header name={name} />
+        </div>
+        <div className="mb-6">
+            <Search />
+        </div>
+        <div className="flex gap-4">
+            <div className="flex gap-4 flex-col flex-grow">
+                <WeeklyPerformance
+                    goalAchieved={weeklyPerformance.goalAchieved}
+                    improvement={weeklyPerformance.improvement}
+                />
+                <Flashcards
+                    finished={flashCards.finished}
+                    total={flashCards.total}
+                    streak={flashCards.streak}
+                />
+            </div>
+            <div className="flex gap-4 flex-col flex-grow">
+                <UpcomingTasks tasks={upcomingTasks} />
+                <ResumeSnapshot resumeCount={resumeCertsCount} />
+            </div>
+            <div className="flex flex-col flex-grow">
+                <AIInsights insights={aiInsights} />
+            </div>
+        </div>
+    </div>
+);
 
 export default Main

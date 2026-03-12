@@ -8,7 +8,7 @@ interface Props {
 
 const ResumeSnapshot = ({resumeCount}: Props) => {
     return (
-        <div className='border border-white rounded-md'>
+        <div className='border border-white rounded-md p-4'>
             <h1>Resume Snapshot</h1>
 
             {resumeCount} new certifications added this semester

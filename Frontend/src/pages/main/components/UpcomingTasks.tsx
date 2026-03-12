@@ -9,7 +9,7 @@ interface Props {
 
 const UpcomingTasks = ({tasks}: Props) => {
     return (
-        <div className='border border-white rounded-md'>
+        <div className='border border-white rounded-md p-4'>
             <h1>Upcoming Tasks 📅</h1>
             <OpenCalendarBtn />
 
