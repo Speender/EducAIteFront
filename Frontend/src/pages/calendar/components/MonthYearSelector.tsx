@@ -37,19 +37,17 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
 
 
     return (
-        <div className="flex items-center mb-2">
-            <div>
-                <select onChange={handleMonthChange} value={date.getMonth()}>
-                    {months.map((month, index) => (
-                        <option key={index} value={index}>{month}</option>
-                    ))}
-                </select>
-                <select onChange={handleYearChange} value={date.getFullYear()}>
-                    {Array.from({ length: 11 }, (_, i) => (
-                        <option key={i} value={date.getFullYear() - 5 + i}>{date.getFullYear() - 5 + i}</option>
-                    ))}
-                </select>
-            </div>
+        <div className="flex items-center mb-2 gap-2">
+            <select onChange={handleMonthChange} value={date.getMonth()}>
+                {months.map((month, index) => (
+                    <option key={index} value={index}>{month}</option>
+                ))}
+            </select>
+            <select onChange={handleYearChange} value={date.getFullYear()}>
+                {Array.from({ length: 11 }, (_, i) => (
+                    <option key={i} value={date.getFullYear() - 5 + i}>{date.getFullYear() - 5 + i}</option>
+                ))}
+            </select>
         </div>
     );
 };

@@ -52,7 +52,7 @@ const SecondaryCalendar = ({ month, year, day, onDateChange }: Props) => {
             days.push(
                 <div
                     key={dayNumber}
-                    className={`w-12 h-12 flex items-center justify-center rounded-full 
+                    className={`w-10 h-10 flex items-center justify-center rounded-full 
                     ${dayNumber === todayDate && today.getMonth() === date.getMonth() && today.getFullYear() === date.getFullYear() ? 'bg-white text-black' : ''}`}
                 >
                     {dayNumber}
@@ -70,7 +70,7 @@ const SecondaryCalendar = ({ month, year, day, onDateChange }: Props) => {
                 <button onClick={goToPreviousMonth} className="text-white">{"<"}</button>
                 <button onClick={goToNextMonth} className="text-white">{">"}</button>
             </div>
-            <div className="grid grid-cols-7 gap-1 ml-4">
+            <div className="grid grid-cols-7 gap-1 mr-4">
                 {renderDays()}
             </div>
         </div>

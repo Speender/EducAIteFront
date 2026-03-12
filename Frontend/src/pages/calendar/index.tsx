@@ -55,17 +55,47 @@ const Calendar: React.FC = () => {
     }
 
     return (
-        <div>
-            <h1>Calendar</h1>
-            <Search />
-            <MonthYearSelector month={currentMonth} year={currentYear} onDateChange={handleDateChange}/>
-            <MainCalendar events={events} month={currentMonth} year={currentYear} />
-            <AddEvent onClick={() => setDialogVisibility(true)} />
-            <SecondaryCalendar month={currentMonth} day={currentDay} year={currentYear} onDateChange={handleDateChange} />
-            <UpcomingEvents events={events} />
-            <AddEventDialog isOpen={dialogVisibility} onClose={handleDialogClose} onSave={handleEventSave} />
+        <div className="p-6 max-w-7xl mx-auto">
+            <div className="flex justify-between items-center mb-4">
+                <h1 className="text-2xl font-bold">Calendar</h1>
+                <Search />
+            </div>
+
+            <div className="flex justify-start mb-6">
+                <MonthYearSelector
+                    month={currentMonth}
+                    year={currentYear}
+                    onDateChange={handleDateChange}
+                />
+            </div>
+
+            <div className="flex flex-col md:flex-row gap-6">
+
+                <div className="w-full md:w-2/3">
+                    <MainCalendar events={events} month={currentMonth} year={currentYear} />
+                </div>
+
+                <div className="w-full md:w-1/3 flex flex-col gap-4">
+                    <div className="flex justify-end">
+                        <AddEvent onClick={() => setDialogVisibility(true)} />
+                    </div>
+                    <SecondaryCalendar
+                        month={currentMonth}
+                        day={currentDay}
+                        year={currentYear}
+                        onDateChange={handleDateChange}
+                    />
+                    <UpcomingEvents events={events} />
+                </div>
+            </div>
+
+            <AddEventDialog
+                isOpen={dialogVisibility}
+                onClose={handleDialogClose}
+                onSave={handleEventSave}
+            />
         </div>
-    )
+    );
 };
 
 export default Calendar
