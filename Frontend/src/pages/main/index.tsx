@@ -63,15 +63,17 @@ const aiInsights = [
 
 
 const Main: React.FC = () => (
-    <div className="flex flex-col items-center">
-        <div className="text-center mb-4">
+    <div className="max-w-7xl mx-auto p-6 flex flex-col gap-8">
+
+        <div className="flex flex-col items-center gap-4">
             <Header name={name} />
+            <div className="w-full max-w-md">
+                <Search />
+            </div>
         </div>
-        <div className="mb-6">
-            <Search />
-        </div>
-        <div className="flex gap-4">
-            <div className="flex gap-4 flex-col flex-grow">
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 items-stretch">
+            <div className="flex flex-col gap-4">
                 <WeeklyPerformance
                     goalAchieved={weeklyPerformance.goalAchieved}
                     improvement={weeklyPerformance.improvement}
@@ -82,13 +84,16 @@ const Main: React.FC = () => (
                     streak={flashCards.streak}
                 />
             </div>
-            <div className="flex gap-4 flex-col flex-grow">
+
+            <div className="flex flex-col gap-4">
                 <UpcomingTasks tasks={upcomingTasks} />
                 <ResumeSnapshot resumeCount={resumeCertsCount} />
             </div>
-            <div className="flex flex-col flex-grow">
+
+            <div className="flex flex-col gap-4">
                 <AIInsights insights={aiInsights} />
             </div>
+
         </div>
     </div>
 );
