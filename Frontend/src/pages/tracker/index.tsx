@@ -162,18 +162,23 @@ const data = [
 
 
 const Tracker: React.FC = () => {
-    const [currentSem, setCurrentSem] = useState<string>(Semester.FIRST_YEAR_FIRST_SEM)
+    const [currentSem, setCurrentSem] = useState<string>(Semester.FIRST_YEAR_FIRST_SEM);
+
     const handleSemSelection = (value: string) => {
-        setCurrentSem(value)
+        setCurrentSem(value);
     }
 
     return (
         <div>
-            <Header name={name} semester={currentSem} />
-            <DropdownSemester selections={Object.values(Semester)} onSelectChange={handleSemSelection} />
-            <Table data={data.filter(s => s.semester === currentSem)[0].courses} />
+            <div className='flex flex-row justify-between items-center mb-4'>
+                <Header name={name} semester={currentSem} />
+                <DropdownSemester selections={Object.values(Semester)} onSelectChange={handleSemSelection} />
+            </div>
+            <div className="mt-4">
+                <Table data={data.filter(s => s.semester === currentSem)[0].courses} />
+            </div>
         </div>
-    )
+    );
 }
 
 
