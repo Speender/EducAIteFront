@@ -3,11 +3,15 @@ import { useNavigate } from 'react-router-dom'
 import logo from '../../../assets/logo.svg'
 import background from '../../../assets/earthbg.svg'
 import robot from '../../../assets/robot.svg'
+import seePass from '../../../assets/see-pass.svg'
+import hidePass from '../../../assets/hide-pass.svg'
 
 const Login: React.FC = () => {
   const [schoolId, setSchoolId] = useState('')
   const [password, setPassword] = useState('')
+  const [showPassword, setShowPassword] = useState(false)
   const [rememberMe, setRememberMe] = useState(false)
+
   const navigate = useNavigate()
 
   const handleLogin = (e: React.FormEvent) => {
@@ -32,7 +36,9 @@ const Login: React.FC = () => {
             </span>
           </div>
         </div>
-        <button className="signup-btn">Sign up</button>
+        <button className="signup-btn" onClick={() => navigate('/register')}>
+          Sign up
+        </button>
       </nav>
 
       {/* Main content */}
@@ -63,15 +69,26 @@ const Login: React.FC = () => {
                 required
               />
             </div>
-            <div className="input-group">
+            <div className="input-group password-group">
               <input
-                type="password"
+                type={showPassword ? 'text' : 'password'}
                 placeholder="Password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 className="form-input"
                 required
               />
+              <button
+                type="button"
+                className="eye-btn"
+                onClick={() => setShowPassword(!showPassword)}
+              >
+                <img
+                  src={showPassword ? hidePass : seePass}
+                  alt="toggle password"
+                  className="eye-icon"
+                />
+              </button>
             </div>
             <div className="remember-row">
               <label className="remember-label">
@@ -238,12 +255,12 @@ const Login: React.FC = () => {
         }
 
         .login-card {
-          width: 420px;
+          width: 520px;
           background: white;
-          border-radius: 16px;
+          border-radius: 20px;
           border: 1px solid #e5e7eb;
-          padding: 40px 40px 48px 40px;
-          box-shadow: 0 4px 24px rgba(0, 0, 0, 0.06);
+          padding: 50px 50px 60px 50px;
+          box-shadow: 0 8px 28px rgba(0, 0, 0, 0.08);
         }
 
         .card-title {
@@ -263,6 +280,31 @@ const Login: React.FC = () => {
 
         .input-group {
           width: 100%;
+        }
+
+        .password-group {
+          position: relative;
+        }
+
+        .eye-btn {
+          position: absolute;
+          right: 14px;
+          top: 50%;
+          transform: translateY(-50%);
+          border: none;
+          background: none;
+          cursor: pointer;
+          padding: 0;
+        }
+
+        .eye-icon {
+          width: 18px;
+          height: 18px;
+          opacity: 0.7;
+        }
+
+        .eye-icon:hover {
+          opacity: 1;
         }
 
         .form-input {
