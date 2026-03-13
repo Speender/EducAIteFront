@@ -1,4 +1,4 @@
-import React from 'react'
+import React, { useState } from 'react'
 
 interface Props {
   titleHighlight: string;
@@ -8,6 +8,22 @@ interface Props {
 }
 
 const MultiLineChartCard = ({ titleHighlight, titleRest, subtitleLabel, subtitleValue }: Props) => {
+  // State for the dropdown toggle
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  
+  // State for the selected dropdown text (defaults to the passed props)
+  const [selectedSubject, setSelectedSubject] = useState(`${titleHighlight} ${titleRest}`);
+
+  // Dropdown options based on your image
+  const dropdownOptions = [
+    "Database Management System",
+    "Human Computer Interaction",
+    "Artificial Intelligence",
+    "Emerging Technologies",
+    "Research Communications",
+    "Android Programming"
+  ];
+
   return (
     <div className="w-full border border-white/20 rounded-[32px] p-8 bg-black mt-8">
       
@@ -21,10 +37,49 @@ const MultiLineChartCard = ({ titleHighlight, titleRest, subtitleLabel, subtitle
           </div>
         </div>
         
-        {/* Dropdown */}
-        <div className="border border-white/20 rounded-xl px-4 py-3 flex items-center gap-6 bg-black cursor-pointer hover:bg-white/5 transition">
-          <span className="text-sm font-medium">{titleHighlight} {titleRest}</span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M6 9l6 6 6-6"/></svg>
+        {/* --- DROPDOWN WITH OVERLAY LOGIC --- */}
+        <div className="relative z-50">
+          
+          {/* Dropdown Trigger */}
+          <div 
+            onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+            className="border border-white/20 rounded-xl px-4 py-3 flex items-center gap-6 bg-black cursor-pointer hover:bg-white/5 transition min-w-[260px] justify-between"
+          >
+            <span className="text-sm font-medium">{selectedSubject}</span>
+            <svg 
+              width="12" 
+              height="12" 
+              viewBox="0 0 24 24" 
+              fill="none" 
+              stroke="currentColor" 
+              strokeWidth="2"
+              className={`transition-transform duration-200 ${isDropdownOpen ? 'rotate-180' : ''}`}
+            >
+              <path d="M6 9l6 6 6-6"/>
+            </svg>
+          </div>
+
+          {/* Dropdown Menu Overlay */}
+          {isDropdownOpen && (
+            <div className="absolute top-full right-0 mt-2 w-full bg-black border border-white/20 rounded-xl shadow-[0_15px_40px_rgba(0,0,0,0.9)] overflow-hidden">
+              <ul className="flex flex-col">
+                {dropdownOptions.map((option, index) => (
+                  <li 
+                    key={index}
+                    onClick={() => {
+                      setSelectedSubject(option);
+                      setIsDropdownOpen(false); // Close menu on selection
+                    }}
+                    className={`px-5 py-4 text-sm font-medium text-white cursor-pointer hover:bg-white/10 hover:text-[#00CEC8] transition-colors ${
+                      index !== dropdownOptions.length - 1 ? 'border-b border-white/20' : ''
+                    }`}
+                  >
+                    {option}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
       </div>
 

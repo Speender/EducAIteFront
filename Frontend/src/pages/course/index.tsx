@@ -17,7 +17,7 @@ const CoursePage = () => {
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
+        
   const handleMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     if (scrollRef.current) {
