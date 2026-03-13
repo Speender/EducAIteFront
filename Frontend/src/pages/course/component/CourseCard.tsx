@@ -14,7 +14,7 @@ const CourseCard = ({ id, title, mastery, color }: CourseCardProps) => {
   return (
     <div 
       onClick={() => navigate(`/courses/${id}`)} // Navigates to the specific course ID
-      className="min-w-[320px] max-w-[320px] bg-[#050505] border border-white/20 rounded-[32px] p-6 select-none relative transition-all duration-300 hover:border-white/40 shadow-[0_35px_40px_-15px_rgba(255,255,255,0.15)] flex flex-col h-[480px] cursor-pointer group"
+      className="min-w-[320px] max-w-[320px] bg-[#050505] border border-white/20 rounded-[32px] p-6 select-none relative transition-all duration-300 hover:border-[#00CEC8]/100 shadow-[0_35px_40px_-15px_rgba(255,255,255,0.15)] flex flex-col h-[480px] cursor-pointer group"
     >
       {/* Top Section */}
       <div className="flex justify-between items-start mb-6">

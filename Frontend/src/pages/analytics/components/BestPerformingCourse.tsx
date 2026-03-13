@@ -1,52 +1,67 @@
-import React from 'react'
+import React from 'react';
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
+import { Bar } from 'react-chartjs-2';
+
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 const BestPerformingCourse = () => {
-  const bars = [
-    { color: 'bg-[#1d4ed8]', height: '90%', label: '↑ +6% from last exam' },
-    { color: 'bg-[#fbbf24]', height: '35%', label: '↑ +2% from last exam' },
-    { color: 'bg-[#ec4899]', height: '52%', label: '↑ +7% from last exam' },
-    { color: 'bg-[#ef4444]', height: '22%', label: '↑ +4% from last exam' },
-    { color: 'bg-[#00CEC8]', height: '40%', label: '↑ +6% from last exam' },
-    { color: 'bg-[#22c55e]', height: '93%', label: '↑ +9% from last exam' },
-  ];
+  const chartData = {
+    labels: [
+      'Database Management', 
+      'Human Computer Interaction', 
+      'Artificial Intelligence', 
+      'Android Programming'
+    ],
+    datasets: [
+      {
+        label: 'Average Score (%)',
+        data: [94, 88, 82, 75],
+        // Adding a gradient-like array of colors or just a solid color
+        backgroundColor: ['#2563eb', '#ec4899', '#eab308', '#22c55e'],
+        borderRadius: 15,
+        barThickness: 40,
+      }
+    ]
+  };
+
+  const chartOptions = {
+    indexAxis: 'y' as const, // THIS makes it a horizontal bar chart!
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: { display: false },
+      tooltip: {
+        backgroundColor: 'rgba(0,0,0,0.8)',
+        titleColor: '#fff',
+        bodyColor: '#fff',
+        borderColor: 'rgba(255,255,255,0.1)',
+        borderWidth: 1,
+      },
+    },
+    scales: {
+      x: {
+        max: 100,
+        grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
+        ticks: { color: 'rgba(255, 255, 255, 0.5)', stepSize: 25 }
+      },
+      y: {
+        grid: { display: false, drawBorder: false },
+        ticks: { color: 'rgba(255, 255, 255, 0.8)', font: { size: 13 } }
+      }
+    }
+  };
 
   return (
     <div className="w-full border border-white/20 rounded-[32px] p-8 bg-black mt-8">
       <div className="mb-8">
-        <h2 className="text-2xl font-bold"><span className="text-[#00CEC8]">Best Performing</span> Course</h2>
-        <p className="text-white/60 text-lg">Human Computer Interaction <span className="text-[#00CEC8] ml-2">%87</span></p>
+        <h2 className="text-3xl font-bold mb-1">Best Performing <span className="text-[#00CEC8]">Courses</span></h2>
+        <p className="text-white/60 text-lg">Ranked by average mastery score</p>
       </div>
-
-      <div className="relative h-[300px] w-full flex">
-        <div className="flex flex-col justify-between h-full text-white/50 text-xs pr-4 pb-8">
-          <span>100</span><span>75</span><span>50</span><span>25</span><span className="opacity-0">0</span>
-        </div>
-        
-        <div className="relative flex-1 border-l border-white/20 pb-8">
-          {/* Horizontal Grid */}
-          <div className="absolute inset-0 flex flex-col justify-between pointer-events-none z-0">
-            {[...Array(4)].map((_, i) => <div key={i} className="w-full border-t border-dashed border-white/10 h-0"></div>)}
-            <div className="w-full border-t border-solid border-white/20 h-0"></div>
-          </div>
-
-          {/* Bars */}
-          <div className="absolute inset-0 flex justify-around items-end pb-8 z-10 px-4">
-            {bars.map((bar, i) => (
-              <div key={i} className="flex flex-col items-center w-20 sm:w-28 h-full justify-end">
-                <span className="text-[#22c55e] text-[10px] mb-3 opacity-80 whitespace-nowrap">{bar.label}</span>
-                <div className={`w-full rounded-2xl ${bar.color} hover:scale-[1.02] transition-transform`} style={{ height: bar.height }}></div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-
-      <div className="bg-[#005e5d] rounded-2xl p-6 mt-12 flex items-center gap-4">
-        <span className="font-bold text-white text-lg whitespace-nowrap">AI Insight:</span>
-        <span className="text-white/90 text-sm">Your learning improves when you study consistently 1.8-2.3 hours per day. Continue your routine to maintain strong progress.</span>
+      <div className="h-[300px] w-full">
+        <Bar data={chartData} options={chartOptions} />
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default BestPerformingCourse
+export default BestPerformingCourse;

@@ -123,7 +123,7 @@ const CourseDetails = () => {
           {mockFiles.map((file, index) => (
             <div 
               key={index} 
-              className="bg-[#050505] border border-white/10 rounded-[24px] p-6 hover:border-white/30 transition-all group relative cursor-pointer"
+              className="bg-[#050505] border border-white/10 rounded-[24px] p-6 hover:border-[#00CEC8]/100 transition-all group relative cursor-pointer"
             >
               {/* THREE DOTS ACTION MENU */}
               <div className="absolute top-4 right-4 z-30">
