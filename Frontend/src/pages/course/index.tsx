@@ -1,8 +1,8 @@
 import React, { useRef, useState } from 'react'
 import CourseCard from './component/CourseCard'
 import { SemesterDropdown } from './component/component'
-import AImpatin from '../../assets/EducaiteRobot.svg'
-import logo from '../../assets/educAIte logo.svg' 
+import AImpatin from '../../assets/robot.svg'
+import logo from '../../assets/educAIte-logo.svg' 
 import UploadModal from './component/UploadModal'
 
 import { courses } from '../../data/courses'
@@ -17,7 +17,7 @@ const CoursePage = () => {
   const startX = useRef(0);
   const scrollLeft = useRef(0);
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
-
+        
   const handleMouseDown = (e: React.MouseEvent) => {
     isDragging.current = true;
     if (scrollRef.current) {

@@ -1,5 +1,5 @@
 import React, { useState } from 'react'
-import logo from '../../../assets/educAIte logo.svg'
+import logo from '../../../assets/educAIte-logo.svg'
 
 interface UploadModalProps {
   onClose: () => void;

@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink } from 'react-router-dom'
-import settingIcon from '../assets/Setting Icon.svg'
+import settingIcon from '../assets/setting-icon.svg'
 
 const Navbar = () => {
   const navItems = [

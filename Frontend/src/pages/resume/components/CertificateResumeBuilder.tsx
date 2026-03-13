@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import robotIcon from '../../../assets/EducaiteRobot.svg';
+import robotIcon from '../../../assets/robot.svg';
 
 interface CertificateResumeBuilderProps {
   onBack: () => void;
