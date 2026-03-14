@@ -1,9 +1,13 @@
 import React from 'react'
+import ResumeMain from './components/ResumeMain'
 
-const Resume: React.FC = () => (
-	<div>
-		<h1>Resume</h1>
-	</div>
-)
+const ResumePage = () => {
+  return (
+    <main className="resume-page-wrapper">
+      <ResumeMain />
+      {/* Future components like <ResumeTips /> or <ResumeFooter /> go here */}
+    </main>
+  )
+}
 
-export default Resume
+export default ResumePage
