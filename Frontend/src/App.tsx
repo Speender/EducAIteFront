@@ -3,7 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
 
 import Navbar from './components/Navbar'
 
-import LandingPage from './pages/landing/LandingPage'
+import LandingPage from "./pages/landing";
 import Main from './pages/main'
 import CoursePage from './pages/course'
 import CourseDetails from './pages/course/component/CourseDetails'

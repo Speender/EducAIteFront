@@ -24,7 +24,7 @@ const LandingPageNavbar = () => {
               }`
             }
           >
-            {item.name}
+            {item.name} 
           </NavLink>
         ))}
         
