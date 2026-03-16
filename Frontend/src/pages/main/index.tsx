@@ -1,8 +1,20 @@
 import React from 'react'
+import LandingLoggedIn from './components/LandingLoggedIn'
+import Landing from './components/Landing'
 
 
-const Main: React.FC = () => {
-    return <h1>Main</h1>
-};
+const loggedIn: Boolean = false
+
+
+const Main = () => {
+    return (
+        <>
+            {loggedIn ?
+                <LandingLoggedIn /> :
+                <Landing />
+            }
+        </>
+    )
+}
 
 export default Main
