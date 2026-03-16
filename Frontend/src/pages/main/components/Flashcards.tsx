@@ -15,11 +15,18 @@ const Flashcards = ({ finished, total, streak }: Props) => {
 
 
     return (
-        <div className='border border-white rounded-md p-4'>
-            <h1>Flashcards Today</h1>
-            <h1>{finished} of {total} completed</h1>
-            <ProgressBar title={percentCompletion + "%"} percentage={percentCompletion} />
-            <p>{streakMsg}</p>
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl">
+            <h2 className="text-xl font-bold text-white mb-4"><span className="text-[#00CEC8]">Flashcards</span> Today</h2>
+            <div className="flex items-baseline gap-2 mb-2">
+                <span className="text-4xl font-bold text-white">{finished}</span>
+                <span className="text-white text-xl">/ {total} completed</span>
+            </div>
+            <div className="mb-4">
+                <ProgressBar title={`${percentCompletion}%`} percentage={percentCompletion} />
+            </div>
+            <div className="flex items-center gap-2 text-[#00CEC8] text-sm font-medium">
+                {streakMsg}
+            </div>
         </div>
     );
 };

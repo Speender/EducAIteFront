@@ -65,7 +65,7 @@ const aiInsights = [
 const LandingLoggedIn: React.FC = () => (
     <div className="max-w-7xl mx-auto p-6 flex flex-col gap-8">
 
-        <div className="flex flex-col items-center gap-4">
+        <div className="flex flex-col items-center gap-4 mt-20">
             <Header name={name} />
             <div className="w-full max-w-md">
                 <Search />

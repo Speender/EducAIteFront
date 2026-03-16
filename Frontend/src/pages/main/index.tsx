@@ -3,7 +3,7 @@ import LandingLoggedIn from './components/LandingLoggedIn'
 import Landing from './components/Landing'
 
 
-const loggedIn: Boolean = false
+const loggedIn: Boolean = true
 
 
 const Main = () => {

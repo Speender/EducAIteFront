@@ -7,15 +7,24 @@ interface Props {
 }
 
 
-const UpcomingTasks = ({tasks}: Props) => {
+const UpcomingTasks = ({ tasks }: Props) => {
     return (
-        <div className='border border-white rounded-md p-4'>
-            <h1>Upcoming Tasks 📅</h1>
-            <OpenCalendarBtn />
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl">
+            <div className="flex justify-between items-start mb-6">
+                <div>
+                    <h2 className="text-xl font-bold text-white"><span className="text-[#00CEC8]">Upcoming</span> Tasks</h2>
+                    <p className="text-white/40 text-sm mt-1">You have {tasks.length} deadlines this week</p>
+                </div>
+                <OpenCalendarBtn /> {/* Ensure this button uses the w-12 h-12 rounded-full border-white/20 style */}
+            </div>
 
-            You have {tasks.length} deadlines this week
-
-            {tasks.map(task => <Deadline date={task.date} task={task.task}/>)}
+            <div className="space-y-3">
+                {tasks.map(task => (
+                    <div className="flex items-center justify-between p-3 rounded-xl bg-white/5 border border-white/5 group hover:border-[#00CEC8]/30 transition-colors">
+                        <Deadline date={task.date} task={task.task} />
+                    </div>
+                ))}
+            </div>
         </div>
     );
 };
