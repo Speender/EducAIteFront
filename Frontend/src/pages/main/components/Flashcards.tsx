@@ -15,7 +15,7 @@ const Flashcards = ({ finished, total, streak }: Props) => {
 
 
     return (
-        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl">
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl h-full">
             <h2 className="text-xl font-bold text-white mb-4"><span className="text-[#00CEC8]">Flashcards</span> Today</h2>
             <div className="flex items-baseline gap-2 mb-2">
                 <span className="text-4xl font-bold text-white">{finished}</span>

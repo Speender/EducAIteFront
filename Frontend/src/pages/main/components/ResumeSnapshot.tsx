@@ -8,7 +8,7 @@ interface Props {
 
 const ResumeSnapshot = ({ resumeCount }: Props) => {
     return (
-        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl flex flex-col justify-between min-h-[160px]">
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl flex flex-col justify-between min-h-[160px] h-full">
             <div>
                 <h2 className="text-xl font-bold text-white"><span className="text-[#00CEC8]">Resume</span> Snapshot</h2>
                 <p className="text-white text-lg leading-tight">

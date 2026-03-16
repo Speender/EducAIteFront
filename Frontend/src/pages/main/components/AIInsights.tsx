@@ -9,7 +9,7 @@ interface AIInsightsProps {
 
 const AIInsights = ({ insights }: AIInsightsProps) => {
     return (
-        <div className="bg-black border border-white rounded-3xl p-8 shadow-xl">
+        <div className="bg-black border border-white rounded-3xl p-8 shadow-xl h-full">
             <div className="flex items-center gap-3 mb-8">
                 <h1 className="text-xl font-bold text-white">
                     <span className="text-[#00CEC8]">AI</span> Insights

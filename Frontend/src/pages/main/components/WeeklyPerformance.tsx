@@ -10,7 +10,7 @@ interface Props {
 
 const WeeklyPerformance = ({ goalAchieved, improvement }: Props) => {
     return (
-        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl text-center">
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl text-center h-full">
             <h2 className="text-xl font-bold text-white"><span className="text-[#00CEC8]">Weekly</span> Performance</h2>
 
             <div className="flex items-center gap-6">

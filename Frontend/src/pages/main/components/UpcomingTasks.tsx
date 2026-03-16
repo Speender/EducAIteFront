@@ -9,7 +9,7 @@ interface Props {
 
 const UpcomingTasks = ({ tasks }: Props) => {
     return (
-        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl">
+        <div className="bg-black border border-white rounded-3xl p-6 shadow-xl h-full">
             <div className="flex justify-between items-start mb-6">
                 <div>
                     <h2 className="text-xl font-bold text-white"><span className="text-[#00CEC8]">Upcoming</span> Tasks</h2>
