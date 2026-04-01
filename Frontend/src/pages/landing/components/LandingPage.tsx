@@ -17,41 +17,34 @@ import LaptopIcon from '../../../assets/lg-laptop.svg';
 const LandingPageContent = () => {
   const navigate = useNavigate();
   
-  // 1. Reference to track this specific section's scroll position
   const containerRef = useRef(null);
 
-  // 2. Track scroll progress from 0 (top) to 1 (scrolled past)
   const { scrollYProgress } = useScroll({
     target: containerRef,
     offset: ["start start", "end start"],
   });
 
-  // --- 3. PARALLAX SPEEDS ---
-  
-  // Text & Buttons: Moves down slightly and fades out smoothly
+  // --- SCROLL PARALLAX SPEEDS ---
   const textY = useTransform(scrollYProgress, [0, 1], ["0%", "50%"]);
   const opacityOut = useTransform(scrollYProgress, [0, 0.6], [1, 0]);
 
-  // Earth Background & Robot (Kept exactly as you requested)
   const earthY = useTransform(scrollYProgress, [0, 1], ["0%", "25%"]);
   const robotY = useTransform(scrollYProgress, [0, 1], ["0%", "-15%"]);
 
-  // --- HORIZONTAL PARALLAX FOR ICONS ---
-  // Using 'vw' (viewport width) ensures they are pushed far off the screen
-  
-  // Left Side Icons (Move negatively on the X axis)
   const moveLeftFast = useTransform(scrollYProgress, [0, 1], ["0vw", "-50vw"]);
   const moveLeftSlow = useTransform(scrollYProgress, [0, 1], ["0vw", "-25vw"]);
 
-  // Right Side Icons (Move positively on the X axis)
   const moveRightFast = useTransform(scrollYProgress, [0, 1], ["0vw", "50vw"]);
   const moveRightSlow = useTransform(scrollYProgress, [0, 1], ["0vw", "25vw"]);
 
   return (
     <div ref={containerRef} className="relative w-full h-screen overflow-hidden">
       
-      {/* --- HERO TEXT SECTION --- */}
+      {/* --- HERO TEXT SECTION (Entry: Fades & slides up) --- */}
       <motion.div 
+        initial={{ opacity: 0, y: 50 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.8, ease: "easeOut" }}
         style={{ y: textY, opacity: opacityOut }}
         className="absolute top-[12vh] left-0 w-full flex flex-col items-center text-center px-4 z-50 pointer-events-none"
       >
@@ -66,8 +59,11 @@ const LandingPageContent = () => {
       {/* --- THE SCENE CONTAINER --- */}
       <div className="absolute inset-0 w-full h-full pointer-events-none">
         
-        {/* 1. Central Robot (Midground) */}
+        {/* 1. Central Robot (Entry: Pops up from bottom) */}
         <motion.div 
+          initial={{ opacity: 0, y: 150 }} 
+          animate={{ opacity: 1, y: 0 }} 
+          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
           style={{ y: robotY }}
           className="absolute bottom-[18vh] left-1/2 -translate-x-1/2 w-[420px] z-20"
         >
@@ -78,27 +74,33 @@ const LandingPageContent = () => {
           />
         </motion.div>
 
-        {/* 2. Earth Background (Background) */}
+        {/* 2. Earth Background (Entry: Slow fade in) */}
         <motion.div 
+          initial={{ opacity: 0 }} 
+          animate={{ opacity: 1 }} 
+          transition={{ duration: 1.5 }}
           style={{ y: earthY, backgroundImage: `url(${EarthImage})` }}
           className="absolute bottom-0 left-0 w-full h-[55vh] bg-cover bg-[center_top] z-30"
         />
 
-        {/* --- 3. LEFT SIDE ICONS (Moving to the Left) --- */}
-        <motion.img style={{ x: moveLeftFast }} src={LightbulbIcon} alt="Lightbulb" className="absolute top-[28vh] left-[8vw] w-[140px] drop-shadow-2xl z-20" />
-        <motion.img style={{ x: moveLeftSlow }} src={BooksIcon} alt="Books" className="absolute top-[36vh] left-[28vw] w-[100px] z-10" />
-        <motion.img style={{ x: moveLeftFast }} src={CalculatorIcon} alt="Calculator" className="absolute top-[48vh] left-[18vw] w-[110px] drop-shadow-2xl z-20" />
-        <motion.img style={{ x: moveLeftSlow }} src={BeakersIcon} alt="Beakers" className="absolute bottom-[25vh] left-[8vw] w-[90px] drop-shadow-xl z-40" />
+        {/* --- 3. LEFT SIDE ICONS (Entry: Staggered scale & fade) --- */}
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.5 }} style={{ x: moveLeftFast }} src={LightbulbIcon} alt="Lightbulb" className="absolute top-[28vh] left-[8vw] w-[140px] drop-shadow-2xl z-20" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.5 }} style={{ x: moveLeftSlow }} src={BooksIcon} alt="Books" className="absolute top-[36vh] left-[28vw] w-[100px] z-10" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.5 }} style={{ x: moveLeftFast }} src={CalculatorIcon} alt="Calculator" className="absolute top-[48vh] left-[18vw] w-[110px] drop-shadow-2xl z-20" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7, duration: 0.5 }} style={{ x: moveLeftSlow }} src={BeakersIcon} alt="Beakers" className="absolute bottom-[25vh] left-[8vw] w-[90px] drop-shadow-xl z-40" />
 
-        {/* --- 4. RIGHT SIDE ICONS (Moving to the Right) --- */}
-        <motion.img style={{ x: moveRightFast }} src={GraduationCapIcon} alt="Graduation Cap" className="absolute top-[26vh] right-[5vw] w-[200px] drop-shadow-2xl z-20" />
-        <motion.img style={{ x: moveRightSlow }} src={CalendarIcon} alt="Calendar" className="absolute top-[42vh] right-[24vw] w-[90px] z-10" />
-        <motion.img style={{ x: moveRightSlow }} src={AtomIcon} alt="Atom" className="absolute bottom-[35vh] right-[30vw] w-[100px] z-40" />
-        <motion.img style={{ x: moveRightFast }} src={LaptopIcon} alt="Laptop" className="absolute bottom-[28vh] right-[10vw] w-[130px] drop-shadow-2xl z-40" />
+        {/* --- 4. RIGHT SIDE ICONS (Entry: Staggered scale & fade) --- */}
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.4, duration: 0.5 }} style={{ x: moveRightFast }} src={GraduationCapIcon} alt="Graduation Cap" className="absolute top-[26vh] right-[5vw] w-[200px] drop-shadow-2xl z-20" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.5, duration: 0.5 }} style={{ x: moveRightSlow }} src={CalendarIcon} alt="Calendar" className="absolute top-[42vh] right-[24vw] w-[90px] z-10" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.6, duration: 0.5 }} style={{ x: moveRightSlow }} src={AtomIcon} alt="Atom" className="absolute bottom-[35vh] right-[30vw] w-[100px] z-40" />
+        <motion.img initial={{ opacity: 0, scale: 0 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: 0.7, duration: 0.5 }} style={{ x: moveRightFast }} src={LaptopIcon} alt="Laptop" className="absolute bottom-[28vh] right-[10vw] w-[130px] drop-shadow-2xl z-40" />
       </div>
 
-      {/* --- CTA BUTTONS --- */}
+      {/* --- CTA BUTTONS (Entry: Fades & slides up) --- */}
       <motion.div 
+        initial={{ opacity: 0, y: 50 }} 
+        animate={{ opacity: 1, y: 0 }} 
+        transition={{ duration: 0.8, delay: 0.3, ease: "easeOut" }}
         style={{ y: textY, opacity: opacityOut }}
         className="absolute bottom-[8vh] left-1/2 -translate-x-1/2 z-50 flex flex-col items-center gap-3 w-full max-w-[280px]"
       >

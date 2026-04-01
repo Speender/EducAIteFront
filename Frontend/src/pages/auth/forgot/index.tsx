@@ -1,12 +1,12 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import ForgotHeader from './components/ForgotHeader';
-import ForgotForm from './components/ForgotForm';
-
-// Background assets
-import robotImage from '../../../assets/robot.svg'; 
 import earthBg from '../../../assets/earthbg.svg'; 
+import logoIcon from '../../../assets/logo.svg';
 
 const ForgotPasswordPage = () => {
+  const navigate = useNavigate();
+
   return (
     <div className="min-h-screen bg-black text-white font-sans relative overflow-hidden flex flex-col">
       
@@ -20,36 +20,39 @@ const ForgotPasswordPage = () => {
         }}
       />
 
-      {/* Embedded Top Navigation Component */}
-      <ForgotHeader />
-
-      {/* Main Content Area */}
-      {/* CHANGED: Removed 'justify-between' and used 'justify-center' with a large gap (gap-24) to bring them closer without squishing */}
-      <div className="relative z-10 flex flex-col lg:flex-row items-center justify-center w-full max-w-[1300px] mx-auto flex-1 px-6 lg:px-12 gap-12 lg:gap-24 xl:gap-40 pb-20">
-        
-        {/* Left Side: Welcome Text & Mascot */}
-        {/* CHANGED: Added 'shrink-0' so this container is never allowed to be compressed by the form */}
-        <div className="flex flex-col items-center lg:items-start text-center lg:text-left max-w-lg shrink-0 pt-10 lg:pt-0">
-          <h1 className="text-4xl lg:text-5xl font-bold mb-4 tracking-tight">
-            No Worries...
-          </h1>
-          <p className="text-lg text-white/80 mb-12 lg:pr-8">
-            Our <span className="text-[#00CEC8] font-bold">Forgot Password</span> tool securely verifies your identity to restore your access instantly.
-          </p>
+      {/* --- EXCHANGED TOP NAVIGATION AREA --- */}
+      <header className="relative z-50 p-6 flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <button 
+            onClick={() => navigate(-1)} 
+            className="w-[40px] h-[40px] border-[1.5px] border-white/20 rounded-full flex items-center justify-center text-white/70 hover:text-white hover:border-white/50 transition-all hover:bg-white/10"
+          >
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M19 12H5M12 5l-7 7 7 7" />
+            </svg>
+          </button>
           
-          {/* Floating Robot Image */}
-          <div className="animate-[bounce_4s_infinite] drop-shadow-[0_0_30px_rgba(0,206,200,0.15)] ml-0 lg:ml-12">
-            <img src={robotImage} alt="AI Assistant" className="w-48 lg:w-[280px] object-contain" />
+          <div className="flex items-center gap-2 cursor-pointer" onClick={() => navigate('/')}>
+            <img src={logoIcon} alt="educAIte logo" className="w-[32px] h-[32px]" />
+            <span className="text-[1.2rem] font-semibold text-white tracking-tight leading-tight">
+              educ<span className="text-[#00CEC8] font-bold">AI</span>te
+            </span>
           </div>
         </div>
 
-        {/* Right Side: Embedded Form Component */}
-        {/* CHANGED: Removed the heavy margins. It now sits naturally based on the gap above. */}
-        <div className="w-full flex justify-center lg:justify-start">
-          <ForgotForm />
-        </div>
+        {/* --- SIGN UP BUTTON --- */}
+        <button 
+          onClick={() => navigate('/register')} 
+          className="bg-white text-black rounded-xl px-7 py-2.5 text-sm font-bold transition-all shadow-[0_0_15px_rgba(255,255,255,0.1)] hover:shadow-[0_0_25px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]"
+        >
+          Sign up
+        </button>
+      </header>
 
-      </div>
+      {/* --- EXCHANGED MAIN CONTENT AREA --- */}
+      {/* This component now holds the text, robot, and form */}
+      <ForgotHeader />
+
     </div>
   );
 };

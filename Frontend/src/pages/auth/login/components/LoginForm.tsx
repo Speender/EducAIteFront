@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
-// 1. IMPORT useNavigate
 import { useNavigate, Link } from 'react-router-dom'; 
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 import seePass from '../../../../assets/see-pass.svg';
 import hidePass from '../../../../assets/hide-pass.svg';
 
@@ -10,19 +10,22 @@ const LoginForm: React.FC = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
 
-  // 2. INITIALIZE navigate
   const navigate = useNavigate();
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
     console.log({ schoolId, password, rememberMe });
-    
-    // 3. ADD NAVIGATION TO MAIN PAGE
     navigate('/main'); 
   };
 
   return (
-    <div className="w-full max-w-[420px] md:max-w-[520px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto">
+    // --- ADDED MOTION.DIV WITH POP-UP ANIMATION ---
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8, y: 30 }} // Starts transparent, smaller, and slightly lower
+      animate={{ opacity: 1, scale: 1, y: 0 }}    // Pops into its normal state
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }} // 0.2s delay so it loads right after the hero text
+      className="w-full max-w-[420px] md:max-w-[520px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto"
+    >
       <h2 className="text-[1.75rem] font-bold text-white text-center mb-10 tracking-tight">
         Login
       </h2>
@@ -76,8 +79,7 @@ const LoginForm: React.FC = () => {
           </label>
         </div>
 
-        {/* --- WHITE BUTTON WITH GLOW --- */}
-        {/* Because type="submit", clicking this triggers the handleLogin function above */}
+        {/* Login Button */}
         <button 
           type="submit" 
           className="w-full py-4 mt-2 bg-white text-black rounded-xl text-lg font-bold transition-all shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:shadow-[0_0_30px_rgba(255,255,255,0.3)] hover:scale-[1.02] active:scale-[0.98]"
@@ -95,9 +97,8 @@ const LoginForm: React.FC = () => {
           </Link>
         </div>
       </form>
-    </div>
+    </motion.div>
   );
 };
 
 export default LoginForm;
-

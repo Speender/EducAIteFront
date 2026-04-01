@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-
+import { motion } from 'framer-motion'; 
 const RegisterForm: React.FC = () => {
   const [formData, setFormData] = useState({
     firstName: '',
@@ -37,7 +37,13 @@ const RegisterForm: React.FC = () => {
   };
 
   return (
-    <div className="w-full max-w-[500px] md:max-w-[560px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto order-1 md:order-2">
+    
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8, y: 30 }} 
+      animate={{ opacity: 1, scale: 1, y: 0 }}    
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }} 
+      className="w-full max-w-[500px] md:max-w-[560px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto order-1 md:order-2"
+    >
       <h2 className="text-[1.75rem] font-bold text-white text-center mb-10 tracking-tight">
         Registration
       </h2>
@@ -72,7 +78,7 @@ const RegisterForm: React.FC = () => {
           Register
         </button>
       </form>
-    </div>
+    </motion.div>
   );
 };
 

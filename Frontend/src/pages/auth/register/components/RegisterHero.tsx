@@ -1,10 +1,16 @@
 import React from 'react';
 import robotImg from '../../../../assets/robot.svg';
 import pdfIcon from '../../../../assets/PDF-Register.svg';
+import { motion } from 'framer-motion'; 
+
 const RegisterHero: React.FC = () => {
   return (
-    <div className="flex-1 w-full flex flex-col items-center md:items-start max-w-[500px] text-center md:text-left mx-auto md:mx-0 order-2 md:order-1 relative">
-      
+    <motion.div 
+      initial={{ opacity: 0, x: -100 }} 
+      animate={{ opacity: 1, x: 0 }}    
+      transition={{ duration: 0.6, ease: "easeOut" }}
+      className="flex-1 w-full flex flex-col items-center md:items-start max-w-[500px] text-center md:text-left mx-auto md:mx-0 order-2 md:order-1 relative"
+    >
       {/* Waving robot */}
       <img 
         src={robotImg} 
@@ -50,7 +56,7 @@ const RegisterHero: React.FC = () => {
         }
         .animate-float { animation: float 3s ease-in-out infinite; }
       `}</style>
-    </div>
+    </motion.div>
   );
 };
 

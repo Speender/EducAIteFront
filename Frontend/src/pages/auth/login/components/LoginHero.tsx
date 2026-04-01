@@ -1,9 +1,16 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 import robotImg from '../../../../assets/robot.svg';
 
 const LoginHero: React.FC = () => {
   return (
-    <div className="flex-1 w-full max-w-[400px] text-center md:text-left mx-auto md:mx-0">
+    // --- ADDED MOTION.DIV WITH SLIDE-IN ANIMATION ---
+    <motion.div 
+      initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+      animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+      className="flex-1 w-full max-w-[400px] text-center md:text-left mx-auto md:mx-0"
+    >
       <h1 className="text-[2.4rem] font-bold text-white tracking-tight leading-tight mb-3.5">
         Welcome Back...
       </h1>
@@ -13,7 +20,6 @@ const LoginHero: React.FC = () => {
       </p>
       
       <div className="flex justify-center md:justify-start mt-5 relative">
-  
         <img 
           src={robotImg} 
           alt="AI Robot" 
@@ -29,7 +35,7 @@ const LoginHero: React.FC = () => {
         }
         .animate-float { animation: float 3s ease-in-out infinite; }
       `}</style>
-    </div>
+    </motion.div>
   );
 };
 

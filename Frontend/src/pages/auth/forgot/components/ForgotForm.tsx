@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion'; 
 
 const ForgotForm = () => {
   const navigate = useNavigate();
@@ -54,9 +55,14 @@ const ForgotForm = () => {
   };
 
   return (
-    <div className="w-full max-w-[420px]">
+    <motion.div 
+      initial={{ opacity: 0, scale: 0.8, y: 30 }} // Starts transparent, smaller, and slightly lower
+      animate={{ opacity: 1, scale: 1, y: 0 }}    // Pops into its normal state
+      transition={{ duration: 0.5, ease: "easeOut", delay: 0.2 }} // 0.2s delay so it loads right after the hero text
+      className="w-full max-w-[420px] md:max-w-[520px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto"
+    >
       {/* Sleek Dark Card from reference image */}
-      <div className="bg-[#050505] border-[1.5px] border-white/10 rounded-[2rem] p-8 lg:p-10 shadow-2xl backdrop-blur-md relative z-10">
+    
         
         <h2 className="text-3xl font-bold text-center mb-2">Forgot Password</h2>
         <p className="text-white/60 text-center text-sm mb-8">
@@ -132,9 +138,7 @@ const ForgotForm = () => {
             Return to Login
           </button>
         </div>
-
-      </div>
-    </div>
+    </motion.div>
   );
 };
 
