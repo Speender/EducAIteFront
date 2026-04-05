@@ -1,10 +1,19 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
 import { Bar } from 'react-chartjs-2';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
 
 const BestPerformingCourse = () => {
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => setIsMobile(window.innerWidth < 768);
+    handleResize(); 
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   const chartData = {
     labels: [
       'Database Management', 
@@ -16,16 +25,16 @@ const BestPerformingCourse = () => {
       {
         label: 'Average Score (%)',
         data: [94, 88, 82, 75],
-        // Adding a gradient-like array of colors or just a solid color
         backgroundColor: ['#2563eb', '#ec4899', '#eab308', '#22c55e'],
-        borderRadius: 15,
-        barThickness: 40,
+        
+        borderRadius: isMobile ? 6 : 15,
+        barThickness: isMobile ? 20 : 40,
       }
     ]
   };
 
   const chartOptions = {
-    indexAxis: 'y' as const, // THIS makes it a horizontal bar chart!
+    indexAxis: 'y' as const, 
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -42,24 +51,34 @@ const BestPerformingCourse = () => {
       x: {
         max: 100,
         grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.5)', stepSize: 25 }
+        ticks: { 
+          color: 'rgba(255, 255, 255, 0.5)', 
+          stepSize: 25,
+          font: { size: isMobile ? 10 : 12 } 
+        }
       },
       y: {
         grid: { display: false, drawBorder: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.8)', font: { size: 13 } }
+        ticks: { 
+          color: 'rgba(255, 255, 255, 0.8)', 
+          font: { size: isMobile ? 10 : 13 } 
+        }
       }
     }
   };
 
   return (
-    // Added interactive group classes here
-    <div className="w-full border border-white/20 rounded-[32px] p-8 bg-black mt-8 group hover:border-[#00CEC8]/60 hover:shadow-[0_0_30px_rgba(0,206,200,0.15)] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-      <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-1">Best Performing <span className="text-[#00CEC8]">Courses</span></h2>
-        {/* Added group-hover text color transition to the subtitle */}
-        <p className="text-white/60 group-hover:text-white/80 transition-colors text-lg">Ranked by average mastery score</p>
+    <div className="w-full border border-white/20 rounded-2xl md:rounded-[32px] p-4 md:p-8 bg-black mt-6 md:mt-8 group hover:border-[#00CEC8]/60 hover:shadow-[0_0_30px_rgba(0,206,200,0.15)] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
+      <div className="mb-4 md:mb-8">
+        <h2 className="text-xl md:text-3xl font-bold mb-1">
+          Best Performing <span className="text-[#00CEC8]">Courses</span>
+        </h2>
+        <p className="text-white/60 group-hover:text-white/80 transition-colors text-xs md:text-lg">
+          Ranked by average mastery score
+        </p>
       </div>
-      <div className="h-[300px] w-full">
+      
+      <div className="h-[200px] md:h-[300px] w-full">
         <Bar data={chartData} options={chartOptions} />
       </div>
     </div>

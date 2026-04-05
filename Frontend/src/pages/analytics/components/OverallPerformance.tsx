@@ -3,14 +3,12 @@ import { motion } from 'framer-motion'
 
 const OverallPerformance = () => {
   return (
-    // 1. The Wrapper: Handles ONLY the Framer Motion entrance animation
     <motion.div 
       initial={{ opacity: 0, x: -100 }} 
       animate={{ opacity: 1, x: 0 }}    
       transition={{ duration: 0.6, ease: "easeOut" }} 
-      className="h-full" // Ensures the wrapper fills the grid cell properly
+      className="h-full" 
     >
-      {/* 2. The Card: Handles all the visuals, hover effects, and CSS transitions */}
       <div className="h-full border border-white/20 rounded-[32px] p-6 flex flex-col group hover:border-[#00CEC8]/60 hover:shadow-[0_0_30px_rgba(0,206,200,0.15)] hover:-translate-y-1 transition-all duration-300 cursor-pointer">
         <h3 className="font-bold mb-6 text-sm"><span className="text-[#00CEC8]">Overall</span> Performance</h3>
         
