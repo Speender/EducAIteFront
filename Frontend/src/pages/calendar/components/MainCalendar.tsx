@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 interface Props {
     events: any[],
@@ -32,7 +33,13 @@ const MainCalendar = ({ events, month, year, highlightedDate }: Props) => {
     if (firstDayOfMonth === -1) firstDayOfMonth = 6; 
 
     return (
-        <div className="bg-[#111111] rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-[1.5px] border-white/20 overflow-hidden w-full">
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides smoothly into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="bg-[#111111] rounded-2xl shadow-[0_8px_30px_rgba(0,0,0,0.5)] border-[1.5px] border-white/20 overflow-hidden w-full"
+        >
             <div className="grid grid-cols-7 border-b-[1.5px] border-white/20 bg-black/50">
                 {weekDays.map((day, i) => (
                     <div key={day} className={`py-4 text-center text-[0.8rem] font-bold text-white/50 uppercase tracking-widest ${i < 6 ? 'border-r-[1.5px] border-white/20' : ''}`}>
@@ -77,7 +84,7 @@ const MainCalendar = ({ events, month, year, highlightedDate }: Props) => {
                     );
                 })}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

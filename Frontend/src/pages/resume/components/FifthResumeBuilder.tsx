@@ -1,5 +1,5 @@
 import React from 'react'
-import robotIcon from '../../../assets/robot.svg';
+import { motion } from 'framer-motion';
 
 interface FifthResumeBuilderProps {
   onBack: () => void;
@@ -11,7 +11,17 @@ const FifthResumeBuilder = ({ onBack, onNext }: FifthResumeBuilderProps) => {
     <div className="min-h-screen bg-black text-white pt-24 pb-10 px-8 lg:px-16 font-sans overflow-x-hidden">
       
       {/* --- PROGRESS BAR (Updated to 25%) --- */}
-      <div className="max-w-7xl mx-auto mb-8">
+      <motion.div 
+        initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+        animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+        transition={{ 
+          type: "spring", 
+          stiffness: 100, 
+          damping: 20, 
+          duration: 0.6 
+        }} 
+        className="max-w-7xl mx-auto mb-8"
+      >
         <div className="bg-[#0A0A0A] border border-white/10 rounded-xl p-4 flex items-center justify-between gap-4 shadow-inner">
           <div className="flex items-center gap-4">
             <div className="bg-[#00CEC8]/20 px-3 py-1.5 rounded-md flex items-center justify-center">
@@ -20,12 +30,17 @@ const FifthResumeBuilder = ({ onBack, onNext }: FifthResumeBuilderProps) => {
             <p className="text-white/40 text-xs font-medium uppercase tracking-wider">Your resume score</p>
           </div>
         </div>
-      </div>
+      </motion.div>
 
       <div className="max-w-7xl mx-auto flex flex-col lg:flex-row gap-12">
         
         {/* LEFT SIDE: WORK EXPERIENCE FORM */}
-        <div className="flex-1 space-y-8">
+        <motion.div 
+          initial={{ opacity: 0, x: -100 }} 
+          animate={{ opacity: 1, x: 0 }} 
+          transition={{ duration: 0.7, ease: "easeOut" }} 
+          className="flex-1 space-y-8"
+        >
           <section className="bg-[#0A0A0A] border border-white/10 rounded-3xl p-8">
             <div className="flex justify-between items-start mb-2">
               <h2 className="text-2xl font-bold">Work Experience</h2>
@@ -95,10 +110,19 @@ const FifthResumeBuilder = ({ onBack, onNext }: FifthResumeBuilderProps) => {
           >
             Next: Review
           </button>
-        </div>
+        </motion.div>
 
         {/* RIGHT SIDE: LIVE PREVIEW */}
-        <div className="w-full lg:w-[450px] flex-shrink-0">
+        <motion.div 
+          initial={{ opacity: 0, y: 60 }} // Starts invisible and 60px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up to its original position
+          transition={{ 
+            duration: 0.8, 
+            ease: [0.16, 1, 0.3, 1], // Custom "expo" ease-out for a premium feel
+            delay: 0.2               // Slight delay so it follows the form entrance
+          }}
+          className="w-full lg:w-[450px] flex-shrink-0"
+        >
           <div className="sticky top-32">
             <div className="aspect-[1/1.414] bg-white rounded-lg shadow-2xl shadow-white/5 overflow-hidden transition-all duration-500 hover:shadow-white/10">
               <div className="p-10 text-black flex flex-col gap-4">
@@ -117,14 +141,7 @@ const FifthResumeBuilder = ({ onBack, onNext }: FifthResumeBuilderProps) => {
             </div>
             <p className="text-center text-white/20 mt-5 text-xs font-bold uppercase tracking-widest font-sans">Live Preview</p>
           </div>
-        </div>
-      </div>
-
-      {/* STICKY ROBOT CHATBOT */}
-      <div className="fixed bottom-8 right-8 z-[100]">
-        <div className="w-14 h-14 bg-[#111] border border-white/20 rounded-full flex items-center justify-center cursor-pointer hover:scale-110 transition-all shadow-[0_0_20px_rgba(0,0,0,0.5)] group">
-          <img src={robotIcon} alt="assistant" className="w-9 h-9 group-hover:rotate-12 transition-transform" />
-        </div>
+        </motion.div>
       </div>
     </div>
   )

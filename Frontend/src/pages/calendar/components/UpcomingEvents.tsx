@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 interface Props {
     events: any[]
@@ -12,7 +13,13 @@ const UpcomingEvents = ({ events }: Props) => {
         .slice(0, 4);
 
     return (
-        <div className="bg-[#111111] border-[1.5px] border-white/20 rounded-2xl p-6 shadow-lg flex-1">
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-UP ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+            animate={{ opacity: 1, y: 0 }}    // Slides up into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="bg-[#111111] border-[1.5px] border-white/20 rounded-2xl p-6 shadow-lg flex-1"
+        >
             <h3 className="text-lg font-bold text-white mb-6">Upcoming Events</h3>
             
             <div className="flex flex-col gap-4">
@@ -30,7 +37,7 @@ const UpcomingEvents = ({ events }: Props) => {
                     ))
                 )}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

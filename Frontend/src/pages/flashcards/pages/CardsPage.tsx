@@ -8,6 +8,7 @@ import { EditModal } from '../components/EditModal';
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal';
 import logo from '../../../assets/educAIte-logo.svg';
 import AImpatin from '../../../assets/robot.svg';
+import { motion } from 'framer-motion';
 
 export function CardsPage() {
   const navigate = useNavigate();
@@ -69,40 +70,58 @@ export function CardsPage() {
       </div>
 
       <main className="max-w-[1400px] mx-auto">
-        <FlashcardsTopActions />
+
 
         {/* TITLE & SEARCH ROW */}
         <div className="flex items-end justify-between mb-12">
-          <div>
+          <motion.div 
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          >
             <h1 className="text-4xl font-bold tracking-tight mb-2">
               <span className="text-[#00CEC8]">Midterm exam for Database</span> 🔥 <span className="text-[#FF4500]">13</span>
             </h1>
             <p className="text-lg text-white/50 font-medium">
               Keep your daily reviews active to maintain your streak!
             </p>
-          </div>
+          </motion.div>
 
-          <div className="w-[320px]">
+          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION --- */}
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="w-[320px]"
+          >
+            <FlashcardsTopActions />
             <SearchBar value={search} onChange={setSearch} />
-          </div>
+          </motion.div>
         </div>
 
         {/* CARDS LIST HEADER */}
-        <h2 className="mb-6 text-[22px] font-bold tracking-wide">
-          Cards <span className="text-white/40 font-normal">({displayedCards.length})</span>
-        </h2>
+        {/* --- WRAPPED IN MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+        >
+          <h2 className="mb-6 text-[22px] font-bold tracking-wide">
+            Cards <span className="text-white/40 font-normal">({displayedCards.length})</span>
+          </h2>
 
-        {/* HORIZONTAL CARDS LIST */}
-        <div className="space-y-6 pb-20">
-          {displayedCards.map((card) => (
-            <CardRow 
-              key={card.id} 
-              card={card} 
-              onEdit={() => setEditingCard({ id: card.id, question: card.question })}
-              onDelete={() => setDeletingCard({ id: card.id, question: card.question })}
-            />
-          ))}
-        </div>
+          {/* HORIZONTAL CARDS LIST */}
+          <div className="space-y-6 pb-20">
+            {displayedCards.map((card) => (
+              <CardRow 
+                key={card.id} 
+                card={card} 
+                onEdit={() => setEditingCard({ id: card.id, question: card.question })}
+                onDelete={() => setDeletingCard({ id: card.id, question: card.question })}
+              />
+            ))}
+          </div>
+        </motion.div>
       </main>
 
       {/* MODALS RENDERED ABOVE EVERYTHING ELSE */}

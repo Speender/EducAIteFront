@@ -1,4 +1,5 @@
 import React, { useRef } from 'react'
+import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
 import pdfIcon from '../../../assets/pdf-logo.svg' 
 import wordIcon from '../../../assets/word-logo.svg'
 import pptIcon from '../../../assets/ppt-logo.svg'
@@ -9,27 +10,41 @@ interface ImportFileModalProps {
 
 const ImportFileModal = ({ onClose }: ImportFileModalProps) => {
   // Create a reference to attach to our hidden file input
-    const fileInputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
-    // Function to trigger the click on the hidden input
-    const handleDivClick = () => {
-        fileInputRef.current?.click();
-    };
+  // Function to trigger the click on the hidden input
+  const handleDivClick = () => {
+      fileInputRef.current?.click();
+  };
 
-    // Function to handle what happens when a file is actually selected
-    const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
-        const files = event.target.files;
-        if (files && files.length > 0) {
-            console.log("File selected:", files[0].name);
-            // You can eventually add your upload logic here!
-        }
-    };
+  // Function to handle what happens when a file is actually selected
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+          console.log("File selected:", files[0].name);
+          // You can eventually add your upload logic here!
+      }
+  };
+
   return (
-    <div 
+    // --- ANIMATED OVERLAY: Fades in smoothly ---
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
       className="fixed inset-0 bg-black/60 backdrop-blur-md z-[150] flex items-center justify-center p-4"
       onClick={onClose} // Closes when clicking background
     >
-      <div 
+      {/* --- ANIMATED MODAL WINDOW: Scales up with a satisfying spring bounce --- */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.95, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.95, y: 20 }}
+        transition={{ 
+          type: "spring", 
+          damping: 25, 
+          stiffness: 400 
+        }}
         className="bg-[#050505] w-full max-w-[600px] rounded-[32px] border border-white/10 p-10 relative shadow-[0_20px_50px_rgba(0,0,0,0.5)]"
         onClick={(e) => e.stopPropagation()} // Prevents closing when clicking modal content
       >
@@ -46,7 +61,6 @@ const ImportFileModal = ({ onClose }: ImportFileModalProps) => {
         <h2 className="text-white text-xl font-bold text-center mb-10">Import file</h2>
 
         {/* Drag & Drop Zone */}
-        {/* --- ADDED onClick={handleDivClick} TO YOUR DIV --- */}
         <div 
             onClick={handleDivClick}
             className="border-2 border-dashed border-white/10 rounded-[24px] p-12 flex flex-col items-center gap-6 mb-8 group hover:border-[#00CEC8]/40 transition-all cursor-pointer bg-white/[0.02]"
@@ -92,8 +106,8 @@ const ImportFileModal = ({ onClose }: ImportFileModalProps) => {
             Continue
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   )
 }
 

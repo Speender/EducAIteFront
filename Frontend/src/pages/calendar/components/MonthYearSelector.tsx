@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -23,7 +24,13 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
     };
 
     return (
-        <div className="relative inline-flex items-center group cursor-pointer mb-2">
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: -50 }} // Starts invisible and 50px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="relative inline-flex items-center group cursor-pointer mb-2"
+        >
             
             {/* Visual Display */}
             <div className="flex items-center gap-3 text-3xl font-bold text-white/90 group-hover:text-white transition-colors">
@@ -55,7 +62,7 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
                 className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-10"
             />
             
-        </div>
+        </motion.div>
     );
 };
 

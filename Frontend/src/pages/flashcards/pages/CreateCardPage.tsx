@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/educAIte-logo.svg';
 import { CardMenu } from '../components/CardMenu';
+import { motion } from 'framer-motion';
 
 export function CreateCardPage() {
   const navigate = useNavigate();
@@ -31,16 +32,25 @@ export function CreateCardPage() {
 
       <main className="flex-1 max-w-[1200px] mx-auto w-full px-8 pb-20">
         {/* Title Section */}
-        <div className="mb-12">
+        <motion.div 
+          initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="mb-12"
+        >
           <h1 className="text-[32px] md:text-[40px] font-medium tracking-tight text-white/90">
             Midterm exam for Database
           </h1>
-          <div className="h-[2px] w-24 bg-[#00CEC8]/60 mt-4 rounded-full"></div>
-        </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-[280px_1fr] gap-12">
           {/* Sidebar / Subdecks */}
-          <aside className="space-y-2">
+          <motion.aside 
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="space-y-2"
+          >
             {subdecks.map((deck) => (
               <button
                 key={deck.name}
@@ -60,13 +70,18 @@ export function CreateCardPage() {
             <button className="w-full flex items-center gap-3 px-6 py-4 text-[#00CEC8]/60 hover:text-[#00CEC8] transition-colors text-lg">
               <span className="text-2xl">+</span> Add subdeck
             </button>
-          </aside>
+          </motion.aside>
 
           {/* Main Editor Area */}
-          <section className="space-y-8">
+          <motion.section 
+            initial={{ opacity: 0, y: 50 }}   // Starts invisible and 50px below
+            animate={{ opacity: 1, y: 0 }}    // Slides up to its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="space-y-8"
+          >
             <h2 className="text-3xl font-medium text-white/90 mb-8">{activeSubdeck}</h2>
             <CardMenu />
-          </section>
+          </motion.section>
         </div>
       </main>
     </div>

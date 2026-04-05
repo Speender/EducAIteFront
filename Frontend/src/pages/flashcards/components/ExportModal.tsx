@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // Ensure framer-motion is installed
 import pdfIcon from '../../../assets/pdf-logo.svg'; 
 import wordIcon from '../../../assets/word-logo.svg';
 
@@ -10,10 +11,22 @@ interface ExportModalProps {
 
 export function ExportModal({ fileName = "Database_Management_System_Cards", onClose, onExport }: ExportModalProps) {
   return (
-    <div className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 px-4 backdrop-blur-md animate-in fade-in duration-300">
-      <div 
-        className="w-full max-w-[500px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative animate-in zoom-in-95 duration-200"
-        onClick={(e) => e.stopPropagation()}
+    /* --- BACKDROP FADE-IN --- */
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[150] flex items-center justify-center bg-black/70 px-4 backdrop-blur-md"
+      onClick={onClose} // Closes when clicking the backdrop
+    >
+      {/* --- MODAL CONTENT POP-UP --- */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+        className="w-full max-w-[500px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
+        onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside
       >
         
         {/* Close Button */}
@@ -28,7 +41,7 @@ export function ExportModal({ fileName = "Database_Management_System_Cards", onC
 
         <div className="space-y-8 flex flex-col items-center">
           
-          {/* Visual representation of the file being exported */}
+          {/* Visual representation of the file */}
           <div className="flex items-center gap-4 bg-white/5 border border-white/10 rounded-2xl p-6 w-full">
             <div className="flex gap-2">
                 <img src={pdfIcon} alt="PDF" className="w-10 h-10 object-contain" />
@@ -56,8 +69,8 @@ export function ExportModal({ fileName = "Database_Management_System_Cards", onC
           </button>
         </div>
         
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react'
+import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
 import CourseCard from './component/CourseCard'
 import { SemesterDropdown } from './component/component'
 import UploadModal from './component/UploadModal'
@@ -6,11 +7,8 @@ import Logo from '../../components/Logo';
 
 import { courses } from '../../data/courses'
 
-{courses.map((course) => (
-  <CourseCard key={course.id} {...course} /> 
-))}
 const CoursePage = () => {
-  // --- Custom Drag-to-Scroll Logic (Kept exactly as you had it) ---
+  // --- Custom Drag-to-Scroll Logic ---
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -40,17 +38,27 @@ const CoursePage = () => {
     <>
       <div className="min-h-screen bg-black text-white pt-32 pb-12 px-8 lg:px-16 font-sans relative overflow-x-hidden antialiased">
         <Logo />
-        {/* SEMESTER DROPDOWN: Positioned right above the cards */}
-        <div className="flex justify-end mb-8 relative z-20 w-full max-w-[1600px] mx-auto">
+        
+        {/* SEMESTER DROPDOWN: Slides in from the right */}
+        <motion.div 
+          initial={{ opacity: 0, x: 100 }} 
+          animate={{ opacity: 1, x: 0 }}    
+          transition={{ duration: 0.6, ease: "easeOut" }} 
+          className="flex justify-end mb-8 relative z-20 w-full max-w-[1600px] mx-auto"
+        >
           <SemesterDropdown />
-        </div>
+        </motion.div>
 
         {/* ================= MAIN CONTENT ROW ================= */}
-        {/* Changed to items-start so the text aligns towards the top, matching the reference images */}
         <div className="flex flex-col lg:flex-row items-start relative z-10 w-full max-w-[1600px] mx-auto">
           
-          {/* ================= LEFT COLUMN ================= */}
-          <div className="w-full lg:w-[420px] flex-shrink-0 flex flex-col pr-8 lg:pr-16 relative z-10 pt-2">
+          {/* ================= LEFT COLUMN: Slides in from the left ================= */}
+          <motion.div 
+            initial={{ opacity: 0, x: -100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
+            className="w-full lg:w-[420px] flex-shrink-0 flex flex-col pr-8 lg:pr-16 relative z-10 pt-2"
+          >
             <div className="space-y-6">
               <h1 className="text-5xl lg:text-[36px] font-semibold leading-[1.15]">
                 Ace <span className="text-[#00CEC8]">The</span> Semester.<br />
@@ -64,8 +72,8 @@ const CoursePage = () => {
               </p>
               
               <div className="flex items-center gap-2 font-medium pt-2">
-                 <span className="text-lg">📅</span>
-                 <p className="text-[14px]">Current Study Load: <span className="text-[#00CEC8] font-bold">3rd Year - 1st Semester</span></p>
+                <span className="text-lg">📅</span>
+                <p className="text-[14px]">Current Study Load: <span className="text-[#00CEC8] font-bold">3rd Year - 1st Semester</span></p>
               </div>
 
               <div className="pt-8">
@@ -79,13 +87,21 @@ const CoursePage = () => {
                 <p className="text-sm text-white/50">Ready for upload after semester ends.</p>
               </div>
             </div>
-          </div>
+          </motion.div>
 
-          {/* ================= VERTICAL DIVIDER LINE ================= */}
-          <div className="hidden lg:block w-[1.5px] bg-white/20 h-[480px] mt-4 relative z-20 rounded-full" />
+          {/* ================= VERTICAL DIVIDER LINE: Fades in ================= */}
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.8 }}
+            className="hidden lg:block w-[1.5px] bg-white/20 h-[480px] mt-4 relative z-20 rounded-full" 
+          />
 
-          {/* ================= RIGHT COLUMN: DRAGGABLE CARDS ================= */}
-          <div 
+          {/* ================= RIGHT COLUMN (DRAGGABLE CARDS): Slides in from the right ================= */}
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
             ref={scrollRef}
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}
@@ -99,16 +115,16 @@ const CoursePage = () => {
               {/* THE INVISIBLE SPACER: Keeps first card away from line at rest */}
               <div className="w-8 flex-shrink-0" />
 
-              {courses.map((course) => (
-                <div key={course.id} className="pointer-events-auto">
-                  <CourseCard {...course} />
-                </div>
-              ))}
+                {courses.map((course) => (
+                  <div key={course.id} className="pointer-events-auto">
+                    <CourseCard {...course} />
+                  </div>
+                ))}
 
               {/* Trailing spacer */}
               <div className="w-16 flex-shrink-0" />
             </div>
-          </div>
+          </motion.div>
 
         </div>
       </div>

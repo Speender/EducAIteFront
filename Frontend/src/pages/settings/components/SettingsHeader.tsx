@@ -1,9 +1,16 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 import settingIcon from '../../../assets/setting-navbar.svg'; // Check asset path
 
 const SettingsHeader: React.FC = () => {
   return (
-    <div className="flex flex-col w-full mb-12 relative z-10">
+    // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN ANIMATION ---
+    <motion.div 
+      initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+      animate={{ opacity: 1, x: 0 }}    // Slides smoothly into its original position
+      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+      className="flex flex-col w-full mb-12 relative z-10"
+    >
       
       {/* Title and Description */}
       <h1 className="text-[3.5rem] font-bold text-white leading-tight tracking-tight mb-3">
@@ -26,7 +33,7 @@ const SettingsHeader: React.FC = () => {
         Account
       </button>
 
-    </div>
+    </motion.div>
   );
 };
 

@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion'; // <-- Import Framer Motion
 
 interface ThreedotsModalProps {
   children?: React.ReactNode;
@@ -22,7 +23,7 @@ const ThreedotsModal: React.FC<ThreedotsModalProps> = ({ children }) => {
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         onClick={(e) => {
-          e.stopPropagation(); // Prevents triggering the card's click event
+          e.stopPropagation(); // Prevents triggering parent card events
           setIsOpen(!isOpen);
         }}
         className="text-white/30 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"
@@ -35,18 +36,27 @@ const ThreedotsModal: React.FC<ThreedotsModalProps> = ({ children }) => {
         </svg>
       </button>
 
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-52 origin-top-right rounded-[20px] bg-[#0A0A0A] border border-white/10 shadow-2xl z-[100] overflow-hidden backdrop-blur-xl animate-in fade-in zoom-in-95 duration-150">
-          <div className="flex flex-col py-1">
-            {children || (
-              <>
-                <button className="w-full text-left px-5 py-3 text-sm text-white/70 hover:bg-white/10">Edit</button>
-                <button className="w-full text-left px-5 py-3 text-sm text-red-400 hover:bg-red-400/10">Delete</button>
-              </>
-            )}
-          </div>
-        </div>
-      )}
+      {/* --- WRAP IN ANIMATEPRESENCE FOR EXIT ANIMATION --- */}
+      <AnimatePresence>
+        {isOpen && (
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.9, y: -10 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.9, y: -10 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 mt-2 w-52 origin-top-right rounded-[20px] bg-[#0A0A0A] border border-white/10 shadow-2xl z-[100] overflow-hidden backdrop-blur-xl"
+          >
+            <div className="flex flex-col py-1">
+              {children || (
+                <>
+                  <button className="w-full text-left px-5 py-3 text-sm text-white/70 hover:bg-white/10 transition-colors">Edit</button>
+                  <button className="w-full text-left px-5 py-3 text-sm text-red-400 hover:bg-red-400/10 transition-colors">Delete</button>
+                </>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

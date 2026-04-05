@@ -1,5 +1,6 @@
 import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom' // Added useLocation
+import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
 import settingIcon from '../assets/setting-navbar.svg'
 
 const Navbar = () => {
@@ -33,7 +34,13 @@ const Navbar = () => {
   };
 
   return (
-    <header className="flex justify-center pt-8 fixed w-full z-50 pointer-events-none">
+    // --- CONVERTED TO MOTION.HEADER WITH SLIDE-DOWN ANIMATION ---
+    <motion.header 
+      initial={{ opacity: 0, y: -50 }} // Starts transparent and 50px higher
+      animate={{ opacity: 1, y: 0 }}   // Slides down to its natural position
+      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s drop
+      className="flex justify-center pt-8 fixed w-full z-50 pointer-events-none"
+    >
       <nav className="flex items-center bg-black/50 backdrop-blur-md border-[1.5px] border-white/20 px-8 py-3 rounded-full gap-8 shadow-[0_8px_30px_rgba(255,255,255,0.15)] pointer-events-auto">
         
         {navItems.map((item) => {
@@ -90,7 +97,7 @@ const Navbar = () => {
         </NavLink>
         
       </nav>
-    </header>
+    </motion.header>
   )
 }
 

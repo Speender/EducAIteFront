@@ -1,18 +1,25 @@
 import React from 'react';
 import ThreedotsModal from './ThreedotsModal';
+import { motion } from 'framer-motion'; // Ensure framer-motion is installed
 
 interface DeckCardProps {
   title: string;
   subtitle: string;
   onClick: () => void;
   showMenu?: boolean;
-  onEdit?: () => void;   // Added
-  onDelete?: () => void; // Added
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 export default function DeckCard({ title, subtitle, onClick, showMenu, onEdit, onDelete }: DeckCardProps) {
   return (
-    <div 
+    /* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP & HOVER ANIMATION --- */
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      whileHover={{ scale: 1.02 }}
+      whileTap={{ scale: 0.98 }}
+      transition={{ duration: 0.4, ease: "easeOut" }}
       onClick={onClick}
       className="relative h-52 bg-black border border-white/20 rounded-[32px] cursor-pointer group hover:border-[#00CEC8]/50 transition-all flex flex-col"
     >
@@ -20,11 +27,15 @@ export default function DeckCard({ title, subtitle, onClick, showMenu, onEdit, o
         
         {showMenu && (
           <div className="absolute top-6 right-6 z-30">
+            {/* Note: If ThreedotsModal has its own internal onClick, 
+               ensure it also uses e.stopPropagation() to prevent 
+               the card's onClick from firing.
+            */}
             <ThreedotsModal>
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  onEdit?.(); // Trigger the edit function passed from parent
+                  onEdit?.();
                 }}
                 className="w-full text-left px-5 py-3 text-sm text-white/70 hover:bg-white/10 transition-colors"
               >
@@ -34,7 +45,7 @@ export default function DeckCard({ title, subtitle, onClick, showMenu, onEdit, o
               <button 
                 onClick={(e) => {
                   e.stopPropagation();
-                  onDelete?.(); // Trigger the delete function passed from parent
+                  onDelete?.();
                 }}
                 className="w-full text-left px-5 py-3 text-sm text-red-400 hover:bg-red-400/10 transition-colors"
               >
@@ -52,6 +63,6 @@ export default function DeckCard({ title, subtitle, onClick, showMenu, onEdit, o
       <div className="h-14 flex items-center px-8">
         <p className="text-[15px] text-white/50 font-medium">{subtitle}</p>
       </div>
-    </div>
+    </motion.div>
   );
 }

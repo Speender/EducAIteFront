@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 import { ExportModal } from '../../flashcards/components/ExportModal'; // <-- Make sure this path matches your folder structure!
 
 interface FileActionMenuProps {
@@ -16,8 +17,13 @@ const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) 
       {/* Invisible backdrop to close the menu when clicking outside (Disabled while modal is open) */}
       {!isExportModalOpen && <div className="fixed inset-0 z-[110]" onClick={onClose} />}
       
-      {/* The Menu Dropdown - we hide it visually if the modal pops up so it looks cleaner */}
-      <div 
+      {/* --- ANIMATED DROPDOWN MENU --- */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.8, y: -10 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.8, y: -10 }}
+        transition={{ type: "spring", damping: 25, stiffness: 400 }}
+        style={{ originX: 1, originY: 0 }} // Makes it pop out from the top-right corner!
         className={`absolute top-10 right-0 w-[220px] bg-[#050505]/95 backdrop-blur-xl border border-white/10 rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[120] transition-opacity duration-200 ${isExportModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={(e) => e.stopPropagation()}
       >
@@ -64,7 +70,7 @@ const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) 
           </div>
         </button>
 
-      </div>
+      </motion.div>
 
       {/* =========================================
           THE EXPORT MODAL (Rendered inside the menu component)

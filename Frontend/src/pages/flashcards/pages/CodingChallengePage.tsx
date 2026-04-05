@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { QuizScoreModal } from '../components/QuizScoreModal'; 
 import logo from '../../../assets/educAIte-logo.svg';
 import AImpatin from '../../../assets/robot.svg';
+import { motion } from 'framer-motion';
 
 export function CodeChallengePage() {
   const navigate = useNavigate();
@@ -36,10 +37,7 @@ export default mongoose.model(collection, schema, collection)`);
 
   return (
     <div className="h-screen bg-black px-8 pt-10 pb-6 text-white font-sans antialiased flex flex-col overflow-hidden relative">
-      
-      {/* =========================================
-          HEADER ROW (Updated to exactly match CodeLearnPage)
-          ========================================= */}
+
       <header className="flex items-center justify-between mb-8 shrink-0 max-w-[1600px] mx-auto w-full z-20">
         <div className="flex items-center gap-6 mb-8">
           <button
@@ -59,12 +57,13 @@ export default mongoose.model(collection, schema, collection)`);
 
       {/* MAIN WORKSPACE GRID */}
       <div className="flex-1 grid grid-cols-1 lg:grid-cols-[1.2fr_0.8fr] gap-6 min-h-0 pb-4 max-w-[1600px] mx-auto w-full">
-        
-        {/* =========================================
-            LEFT PANEL: CODE EDITOR 
-            ========================================= */}
-        <section className="bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl">
-          
+        {/* --- CONVERTED TO MOTION.SECTION WITH SLIDE-IN FROM LEFT ANIMATION --- */}
+        <motion.section 
+          initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl"
+        >
           <div className="flex items-end justify-between px-4 pt-3 border-b border-white/5 shrink-0 bg-[#050505]">
             <div className="bg-[#1A1A1A] border border-white/10 border-b-0 rounded-t-xl px-5 py-3 flex items-center gap-2 text-sm font-medium text-[#00CEC8]">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/></svg>
@@ -90,7 +89,7 @@ export default mongoose.model(collection, schema, collection)`);
               className="flex-1 w-full bg-transparent text-[#E2E8F0] font-mono text-[14px] leading-[1.6] p-4 outline-none resize-none whitespace-pre focus:ring-inset focus:ring-1 focus:ring-[#00CEC8]/30 transition-all"
             />
           </div>
-        </section>
+        </motion.section>
 
         {/* =========================================
             RIGHT PANELS 
@@ -98,7 +97,13 @@ export default mongoose.model(collection, schema, collection)`);
         <section className="flex flex-col gap-6 min-h-0">
           
           {/* TOP RIGHT: DESCRIPTION */}
-          <div className="flex-[3] bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl">
+          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT AND HIDDEN SCROLLBAR --- */}
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="flex-[3] bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl"
+          >
             
             {/* Tabs */}
             <div className="flex items-end px-4 pt-3 border-b border-white/5 shrink-0 gap-2 bg-[#050505]">
@@ -112,8 +117,8 @@ export default mongoose.model(collection, schema, collection)`);
               </button>
             </div>
 
-            {/* Content */}
-            <div className="p-8 overflow-y-auto">
+            {/* Content (Scrollbar hidden via Tailwind arbitrary variants) */}
+            <div className="p-8 overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
               <h2 className="text-3xl font-bold mb-6 text-white">Mongoose</h2>
               <p className="text-white/70 text-[15px] leading-relaxed mb-6">
                 Given a positive integer <span className="text-[#00CEC8] bg-[#00CEC8]/10 px-1.5 py-0.5 rounded font-mono">millis</span>, write an asynchronous function that sleeps for millis milliseconds. It can resolve any value.
@@ -135,10 +140,16 @@ export default mongoose.model(collection, schema, collection)`);
                 {'}'});
               </div>
             </div>
-          </div>
+          </motion.div>
 
           {/* BOTTOM RIGHT: TEST CASES */}
-          <div className="flex-[2] bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl">
+          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+          <motion.div 
+            initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+            animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="flex-[2] bg-[#0A0A0A] border border-white/10 rounded-[24px] flex flex-col overflow-hidden shadow-2xl"
+          >
             
             <div className="flex items-end justify-between px-4 pt-3 border-b border-white/5 shrink-0 bg-[#050505]">
               <div className="bg-[#1A1A1A] border border-white/10 border-b-0 rounded-t-xl px-5 py-3 flex items-center gap-2 text-sm font-medium text-white">
@@ -162,15 +173,8 @@ export default mongoose.model(collection, schema, collection)`);
                 </div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
-      </div>
-
-      {/* Floating Robot */}
-      <div className="fixed bottom-6 right-6 z-40">
-        <div className="w-14 h-14 rounded-full border border-white/20 bg-[#050505] flex items-center justify-center overflow-hidden cursor-pointer hover:scale-110 transition-all shadow-[0_0_20px_rgba(0,0,0,0.8)]">
-          <img src={AImpatin} alt="bot" className="w-8 h-8 object-contain" />
-        </div>
       </div>
 
       {/* RENDER THE MODAL ON TOP OF EVERYTHING */}

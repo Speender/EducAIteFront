@@ -7,6 +7,7 @@ import SecondaryCalendar from './components/SecondaryCalendar';
 import AddEventDialog from './components/AddEventDialog';
 import MonthYearSelector from './components/MonthYearSelector';
 import Logo from '../../components/Logo';
+import { motion } from 'framer-motion';
 
 interface Event {
     date: string,
@@ -73,7 +74,14 @@ const Calendar: React.FC = () => {
                 
                 {/* Header Row */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
-                    <h1 className="text-4xl md:text-[2.5rem] font-bold tracking-tight">Calendar</h1>
+                    <motion.h1
+                        initial={{ opacity: 0, x: -100 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.6, ease: "easeOut" }}
+                        className="text-4xl md:text-[2.5rem] font-bold tracking-tight"
+                    >
+                        Calendar
+                    </motion.h1>
                     <Search 
                         events={events} 
                         onResultClick={handleSearchResultClick} 

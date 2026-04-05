@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
 import { courses } from '../../../data/courses'
 import logo from '../../../assets/educAIte-logo.svg'
-import AImpatin from '../../../assets/robot.svg'
+import { motion } from 'framer-motion'
 
 // Component Imports
 import ImportFileModal from './ImportFileModal'
@@ -111,39 +111,50 @@ const CourseDetails = () => {
 
         {/* Dynamic Title Section */}
         <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-16">
-          <div>
-            <h1 className="text-5xl font-medium mb-4 tracking-tight">Files</h1>
-            <h2 className="text-[#00CEC8] text-4xl font-semibold leading-tight">
-              {selectedCourse.title}
-            </h2>
-            
-            <div className="flex gap-4 mt-8">
-              {/* IMPORT BUTTON */}
-              <button 
-                onClick={() => setIsImportModalOpen(true)}
-                className="bg-white text-black font-normal px-10 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform"
-              >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                Import file
-              </button>
-
-              {/* CREATE BUTTON WITH MENU */}
-              <div className="relative">
+          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION --- */}
+          <motion.div 
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          >
+              <h1 className="text-5xl font-medium mb-4 tracking-tight">Files</h1>
+              <h2 className="text-[#00CEC8] text-4xl font-semibold leading-tight">
+                {selectedCourse.title}
+              </h2>
+              
+              <div className="flex gap-4 mt-8">
+                {/* IMPORT BUTTON */}
                 <button 
-                  onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
+                  onClick={() => setIsImportModalOpen(true)}
                   className="bg-white text-black font-normal px-10 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform"
                 >
                   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  Create
+                  Import file
                 </button>
-                {/* Linked to handleAddFolder */}
-                {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} onFolderCreated={handleAddFolder} />}
+
+                {/* CREATE BUTTON WITH MENU */}
+                <div className="relative">
+                  <button 
+                    onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
+                    className="bg-white text-black font-normal px-10 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform"
+                  >
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
+                    Create
+                  </button>
+                  {/* Linked to handleAddFolder */}
+                  {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} onFolderCreated={handleAddFolder} />}
+                </div>
               </div>
-            </div>
-          </div>
+          </motion.div>
 
           {/* Search Section */}
-          <div className="w-full max-w-xl">
+          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION --- */}
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="w-full max-w-xl"
+          >
             <p className="text-white text-xl font-medium mb-4">Search files</p>
             <div className="relative flex gap-2">
               <div className="relative flex-1">
@@ -159,11 +170,17 @@ const CourseDetails = () => {
               <button className="bg-white text-black font-medium px-8 py-2 rounded-full hover:bg-gray-200 transition-colors">Search</button>
             </div>
             <p className="text-white/40 text-[11px] mt-3 ml-2 uppercase tracking-widest font-bold">Enter at least 2 characters to search</p>
-          </div>
+          </motion.div>
         </div>
 
         {/* Files Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
+        {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
+        >
           
           {/* Empty State when search finds nothing */}
           {filteredFiles.length === 0 && (
@@ -219,14 +236,7 @@ const CourseDetails = () => {
                </div>
             </div>
           ))}
-        </div>
-        
-        {/* Floating Robot */}
-        <div className="fixed bottom-8 right-8 z-50">
-          <div className="w-14 h-14 rounded-full border border-white/20 bg-[#050505] flex items-center justify-center overflow-hidden cursor-pointer hover:scale-110 transition-all shadow-xl">
-            <img src={AImpatin} alt="bot" className="w-9 h-9 object-contain" />
-          </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Modal Overlay */}

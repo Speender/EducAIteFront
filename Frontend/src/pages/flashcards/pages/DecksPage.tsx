@@ -7,6 +7,7 @@ import { AddSubdeckModal } from '../components/AddSubdeckModal';
 import { EditModal } from '../components/EditModal'; // New Import
 import { DeleteConfirmationModal } from '../components/DeleteConfirmationModal'; // New Import
 import logo from '../../../assets/educAIte-logo.svg'; 
+import { motion } from 'framer-motion';
 
 export function DecksPage() {
   const navigate = useNavigate();
@@ -68,7 +69,12 @@ export function DecksPage() {
       <main className="max-w-[1400px] mx-auto">
         
         {/* FLOATING ACTION ROW */}
-        <div className="flex justify-end mb-4">
+        <motion.div 
+          initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="flex justify-end mb-4"
+        >
           <button 
             onClick={() => setIsAddSubdeckModalOpen(true)}
             className="flex items-center gap-2 bg-white text-black text-sm font-bold px-6 py-2.5 rounded-full shadow-[0_0_20px_rgba(255,255,255,0.4)] hover:scale-105 transition-all"
@@ -79,26 +85,40 @@ export function DecksPage() {
             </svg>
             Add deck
           </button>
-        </div>
+        </motion.div>
 
         {/* TITLE & SEARCH ROW */}
         <div className="flex items-end justify-between mb-12">
-          <div>
+          <motion.div 
+            initial={{ opacity: 0, x: -100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }}
+          >
             <h1 className="text-4xl font-bold tracking-tight mb-2">
               <span className="text-[#00CEC8]">Database Management System</span> 🔥 <span className="text-[#FF4500]">13</span>
             </h1>
             <p className="text-lg text-white/50 font-medium">
               Keep your daily reviews active to maintain your streak!
             </p>
-          </div>
+          </motion.div>
 
-          <div className="w-[320px]">
+          <motion.div 
+            initial={{ opacity: 0, x: 100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
+            className="w-[320px]"
+          >
             <SearchBar value={search} onChange={setSearch} />
-          </div>
+          </motion.div>
         </div>
 
         {/* SUBDECKS GRID */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+        >
           {filteredSubdecks.map((subdeck) => (
             <DeckCard
               key={subdeck.id}
@@ -106,12 +126,11 @@ export function DecksPage() {
               subtitle={`Cards: ${subdeck.cardCount}`}
               onClick={() => navigate(`/cards`)}
               showMenu={true}
-              // Updated to open custom modals instead of prompts
               onEdit={() => setEditingItem({ id: subdeck.id, title: subdeck.title })}
               onDelete={() => setDeletingItem({ id: subdeck.id, title: subdeck.title })}
             />
           ))}
-        </div>
+        </motion.div>
       </main>
 
       {/* --- MODAL RENDERING --- */}

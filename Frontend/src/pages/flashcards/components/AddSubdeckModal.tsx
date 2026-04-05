@@ -1,20 +1,14 @@
 import React, { useState, useRef } from 'react';
+import { motion } from 'framer-motion'; // Ensure framer-motion is installed
 
 interface AddSubdeckModalProps {
   onClose: () => void;
   onSubmit: (title: string, color?: string, picture?: File) => void;
-  parentDeckName?: string; // NEW: Pass the parent deck name to display in the pill!
+  parentDeckName?: string;
 }
 
-// Same color palette
 const colors = [
-  '#F28E82', // Coral/Red
-  '#9965F2', // Purple
-  '#8EF2DF', // Aqua/Cyan
-  '#87B376', // Sage Green
-  '#6094F2', // Cornflower Blue
-  '#D1F257', // Lime Green
-  '#F24EB1'  // Magenta
+  '#F28E82', '#9965F2', '#8EF2DF', '#87B376', '#6094F2', '#D1F257', '#F24EB1'
 ];
 
 export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database Management System" }: AddSubdeckModalProps) {
@@ -34,15 +28,31 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm">
-      <div className="w-full max-w-[480px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative animate-in fade-in zoom-in-95 duration-200">
+    /* --- BACKDROP FADE-IN --- */
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4 backdrop-blur-sm"
+    >
+      {/* --- MODAL POP-UP ANIMATION --- */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+        className="w-full max-w-[480px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
+      >
 
-        {/* Close Button (X) */}
+        {/* Close Button */}
         <button onClick={onClose} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"></line><line x1="6" y1="6" x2="18" y2="18"></line></svg>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
         </button>
 
-        {/* --- NEW: Centered Header & Parent Deck Pill --- */}
+        {/* Header & Parent Deck Pill */}
         <div className="text-center mb-10">
           <h2 className="text-[26px] font-bold text-white mb-3">Add subdeck</h2>
           {parentDeckName && (
@@ -53,15 +63,14 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
         </div>
 
         <div className="space-y-6">
-          
-          {/* Deck Name Input */}
+          {/* Subdeck Name Input */}
           <div>
             <label className="block text-sm font-medium text-white/90 mb-2">Deck name</label>
             <input
               id="deck-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-transparent rounded-full border border-white/30 px-5 py-3 text-base outline-none focus:border-white/60 transition-colors text-white"
+              className="w-full bg-transparent rounded-full border border-white/30 px-5 py-3 text-base outline-none focus:border-[#00CEC8] transition-colors text-white"
               autoFocus
             />
           </div>
@@ -77,7 +86,7 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
                   className={`h-10 w-10 rounded-full transition-all ${
                     color === item 
                       ? 'scale-110 border-4 border-white' 
-                      : 'border border-white/20 hover:scale-105'
+                      : 'border border-white/20 hover:scale-110'
                   }`}
                   style={{ backgroundColor: item }}
                 />
@@ -85,8 +94,7 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
             </div>
           </div>
 
-          {/* Separator */}
-          <div className="text-white/40 text-center text-sm font-medium my-6">or</div>
+          <div className="text-white/40 text-center text-sm font-medium my-4">or</div>
 
           {/* Picture Picker */}
           <div>
@@ -105,7 +113,7 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
                 className="h-16 w-16 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden"
               >
                 {picture ? (
-                  <img src={URL.createObjectURL(picture)} alt="selected preview" className="w-full h-full object-cover" />
+                  <img src={URL.createObjectURL(picture)} alt="preview" className="w-full h-full object-cover" />
                 ) : (
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -127,16 +135,15 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
                 onClose(); 
               }
             }}
-            className={`w-full rounded-full py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-4 ${
+            className={`w-full rounded-full py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-4 ${
               !title.trim() ? 'cursor-not-allowed opacity-50' : ''
             }`}
           >
             Add deck
           </button>
         </div>
-
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

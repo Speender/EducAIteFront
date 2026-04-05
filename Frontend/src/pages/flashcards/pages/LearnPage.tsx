@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/educAIte-logo.svg';
 import AImpatin from '../../../assets/robot.svg';
+import { motion } from 'framer-motion';
 
 export function LearnPage() {
   const navigate = useNavigate();
@@ -44,15 +45,24 @@ export function LearnPage() {
       <main className="flex-1 flex flex-col items-center w-full z-10 max-w-[1200px] mx-auto">
         
         {/* --- PAGE TITLE --- */}
-        <div className="mb-16 text-center">
+        <motion.div 
+          initial={{ opacity: 0, y: -100 }} // Starts invisible and 100px above
+          animate={{ opacity: 1, y: 0 }}    // Slides down to its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="mb-16 text-center"
+        >
           <h1 className="text-[32px] md:text-[38px] font-medium tracking-wide text-white/90">
             Midterm exam for Database
           </h1>
           <div className="h-[2px] w-20 bg-[#00CEC8]/60 mx-auto mt-3 rounded-full"></div>
-        </div>
+        </motion.div>
 
         {/* --- FLIPPING MAIN FLASHCARD --- */}
-        <div 
+        {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}   // Starts invisible and 50px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
           className="w-full max-w-5xl [perspective:1500px] cursor-pointer"
           onClick={() => setIsFlipped(!isFlipped)}
         >
@@ -128,10 +138,16 @@ export function LearnPage() {
             </div>
 
           </div>
-        </div>
+        </motion.div>
 
         {/* --- NAVIGATION CONTROLS --- */}
-        <div className="mt-16 flex items-center justify-center gap-12 z-20">
+        {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+        <motion.div 
+          initial={{ opacity: 0, y: 50 }}   // Starts invisible and 50px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="mt-16 flex items-center justify-center gap-12 z-20"
+        >
           <button
             onClick={handlePrev}
             disabled={index === 1}
@@ -154,16 +170,8 @@ export function LearnPage() {
           >
              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="m9 18 6-6-6-6"/></svg>
           </button>
-        </div>
+        </motion.div>
       </main>
-
-      {/* Floating Robot */}
-      <div className="fixed bottom-8 right-8 z-50">
-        <div className="w-14 h-14 rounded-full border border-white/10 bg-[#050505] flex items-center justify-center overflow-hidden cursor-pointer hover:scale-110 transition-all">
-          <img src={AImpatin} alt="bot" className="w-8 h-8 opacity-80" />
-        </div>
-      </div>
-      
     </div>
   );
 }

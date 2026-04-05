@@ -1,5 +1,4 @@
 import React from 'react';
-import Navbar from '../../components/Navbar';
 import EarthBg from '../../assets/earthbg.svg';
 import robotImg from '../../assets/robot.svg';
 import Logo from '../../components/Logo';
@@ -13,9 +12,6 @@ const MainPage: React.FC = () => {
         <div className="min-h-screen bg-black text-white font-sans relative overflow-x-hidden antialiased pb-20">
 
             <Logo />
-
-            {/* 1. Global Navbar */}
-            <Navbar />
 
             {/* 2. Main Content Container */}
             <main className="max-w-[1280px] mx-auto px-6 pt-32 relative z-10 flex flex-col items-center">

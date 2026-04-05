@@ -1,6 +1,7 @@
 import React, { useState, useRef } from 'react'
 import { useNavigate } from 'react-router-dom'
 import logo from '../../../assets/educAIte-logo.svg'
+import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
 
 const CreateNotes = () => {
   const navigate = useNavigate();
@@ -91,7 +92,13 @@ const CreateNotes = () => {
     <div className="min-h-screen bg-black text-white font-sans antialiased flex flex-col">
       
       {/* GLOBAL NAVBAR */}
-      <header className="flex items-center justify-between px-8 py-6 lg:px-16 border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-50">
+      {/* --- CONVERTED TO MOTION.HEADER WITH SLIDE-DOWN FROM TOP ANIMATION --- */}
+      <motion.header 
+        initial={{ opacity: 0, y: -100 }} // Starts invisible and 100px above
+        animate={{ opacity: 1, y: 0 }}    // Slides down to its original position (0)
+        transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+        className="flex items-center justify-between px-8 py-6 lg:px-16 border-b border-white/10 bg-black/50 backdrop-blur-md sticky top-0 z-50"
+      >
         <div className="flex items-center gap-6">
           <button 
             onClick={() => navigate(-1)} 
@@ -118,13 +125,19 @@ const CreateNotes = () => {
             Save Note
           </button>
         </div>
-      </header>
+      </motion.header>
 
       {/* MAIN CONTENT AREA */}
       <main className="flex flex-1 flex-col lg:flex-row overflow-hidden">
         
         {/* TEXT EDITOR AREA */}
-        <div className="flex-1 p-8 lg:p-20 overflow-y-auto custom-scrollbar">
+        {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION --- */}
+        <motion.div 
+          initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="flex-1 p-8 lg:p-20 overflow-y-auto custom-scrollbar"
+        >
           <div className="max-w-4xl mx-auto">
             
             <p className="text-[#00CEC8] text-xl font-medium mb-6">
@@ -210,10 +223,16 @@ const CreateNotes = () => {
             />
             
           </div>
-        </div>
+        </motion.div>
 
         {/* SIDEBAR */}
-        <aside className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-10 bg-[#050505]/50 flex-shrink-0">
+        {/* --- CONVERTED TO MOTION.ASIDE WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+        <motion.aside 
+          initial={{ opacity: 0, y: 100 }} // Starts invisible and 100px below
+          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="w-full lg:w-80 border-t lg:border-t-0 lg:border-l border-white/10 p-10 bg-[#050505]/50 flex-shrink-0"
+        >
           <p className="text-[#00CEC8] text-[11px] font-bold uppercase tracking-[0.2em] mb-10">Note Settings</p>
           
           <div className="space-y-10">
@@ -240,7 +259,7 @@ const CreateNotes = () => {
               <p className="text-white/20 text-[10px] italic font-medium">Last synced: Just now</p>
             </div>
           </div>
-        </aside>
+        </motion.aside>
       </main>
     </div>
   )

@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/educAIte-logo.svg';
 import AImpatin from '../../../assets/robot.svg';
 import MagicBento from '../../../components/MagicBento'; // Ensure this points to your updated MagicBento file
+import { motion } from 'framer-motion';
 
 export function PerformancePage() {
   const navigate = useNavigate();
@@ -43,30 +44,22 @@ export function PerformancePage() {
           </button>
           <img src={logo} alt="educAIte" className="h-9 opacity-90 z-20" />
         </div>
-        
-        {/* Top Navigation Bar */}
-        <div className="hidden md:flex bg-[#050505] border border-white/10 rounded-full px-10 py-3.5 gap-10 text-[13px] font-bold tracking-wide text-white/50 shadow-2xl z-20">
-           <span className="hover:text-white cursor-pointer transition-colors">Home</span>
-           <span className="hover:text-white cursor-pointer transition-colors">Courses</span>
-           <span className="hover:text-white cursor-pointer transition-colors">Analytics</span>
-           <span className="text-[#00CEC8] cursor-pointer drop-shadow-[0_0_8px_rgba(0,206,200,0.8)]">Flashcards</span>
-           <span className="hover:text-white cursor-pointer transition-colors">Tracker</span>
-           <span className="hover:text-white cursor-pointer transition-colors">Calendar</span>
-           <span className="hover:text-white cursor-pointer transition-colors">Resume</span>
-        </div>
-        
-        <div className="w-[120px]"></div>
       </div>
 
       <main className="max-w-[1400px] mx-auto relative z-10">
         
         {/* TITLE */}
-        <div className="mb-10 flex flex-col items-center text-center">
+        <motion.div 
+          initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          className="mb-10 flex flex-col items-center text-center"
+        >
           <h1 className="text-[36px] md:text-[42px] font-semibold text-white tracking-tight">
             Overall <span className="text-[#00CEC8]">Performance</span>
           </h1>
           <div className="h-[2px] w-20 bg-[#00CEC8]/60 mx-auto mt-3 rounded-full"></div>
-        </div>
+        </motion.div>
 
         {/* =========================================
             MAGIC BENTO GRID
@@ -75,7 +68,14 @@ export function PerformancePage() {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 auto-rows-[180px]">
           
           {/* 1. GAUGE CHART (Tall: 1 Col x 2 Rows) */}
-          <MagicBento className="col-span-1 row-span-2 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col items-center justify-between group hover:border-[#00CEC8]/30 transition-colors">
+          {/* --- WRAPPED IN MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION --- */}
+          <motion.div
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="col-span-1 row-span-2 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col items-center justify-between group hover:border-[#00CEC8]/30 transition-colors">
               <h2 className="text-[16px] font-bold text-white/60 uppercase tracking-widest text-center">Final Score</h2>
               
               <div className="relative w-[220px] h-[110px] flex-shrink-0 mt-8 pointer-events-none">
@@ -106,10 +106,17 @@ export function PerformancePage() {
                   Back to lesson
                 </button>
               </div>
-          </MagicBento>
+            </MagicBento>
+          </motion.div>
 
           {/* 2. MASTERY PIE CHART (Large: 2 Cols x 2 Rows) */}
-          <MagicBento className="col-span-1 lg:col-span-2 row-span-2 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-10 flex items-center justify-between overflow-hidden relative group hover:border-blue-500/30 transition-colors">
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}   // Starts invisible and 50px below
+            animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="col-span-1 lg:col-span-2 row-span-2 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-10 flex items-center justify-between overflow-hidden relative group hover:border-blue-500/30 transition-colors">
               <div className="flex-1 z-20 pointer-events-none">
                 <h2 className="text-[16px] font-bold text-white/60 uppercase tracking-widest mb-10">Knowledge Mastery</h2>
                 <div className="flex flex-col gap-6">
@@ -140,10 +147,17 @@ export function PerformancePage() {
                   </div>
                 </div>
               </div>
-          </MagicBento>
+            </MagicBento>
+          </motion.div>
 
           {/* 3. AI INSIGHTS (Tall: 1 Col x 2 Rows) */}
-          <MagicBento className="col-span-1 row-span-2 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col relative overflow-hidden group hover:border-[#00CEC8]/30 transition-colors">
+          <motion.div
+            initial={{ opacity: 0, x: 100 }}  // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="col-span-1 row-span-2 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col relative overflow-hidden group hover:border-[#00CEC8]/30 transition-colors">
               <div className="absolute top-0 right-0 w-32 h-32 bg-[#00CEC8]/10 blur-[50px] rounded-full z-0 pointer-events-none"></div>
               
               <div className="flex items-center gap-3 mb-6 z-20 pointer-events-none">
@@ -156,31 +170,60 @@ export function PerformancePage() {
               <p className="text-[15px] leading-[1.8] text-white/70 font-medium z-20 pointer-events-none">
                 {quizResult.insight}
               </p>
-          </MagicBento>
+            </MagicBento>
+          </motion.div>
 
           {/* 4. TOTAL RESPONSES (Square: 1x1) */}
-          <MagicBento className="col-span-1 row-span-1 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-white/20 transition-colors z-20">
-              <p className="text-[13px] font-bold text-white/40 uppercase tracking-widest mb-2 pointer-events-none">Total Responses</p>
-              <p className="text-[48px] font-black text-white leading-none pointer-events-none">{quizResult.totalResponses}</p>
-          </MagicBento>
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5, ease: "easeOut" }}
+            className="col-span-1 row-span-1 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-white/20 transition-colors z-20">
+                <p className="text-[13px] font-bold text-white/40 uppercase tracking-widest mb-2 pointer-events-none">Total Responses</p>
+                <p className="text-[48px] font-black text-white leading-none pointer-events-none">{quizResult.totalResponses}</p>
+            </MagicBento>
+          </motion.div>
 
-          {/* 5. HIGHEST SCORE (Square: 1x1) */}
-          <MagicBento className="col-span-1 row-span-1 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-[#00CEC8]/30 transition-colors z-20">
-              <p className="text-[13px] font-bold text-[#00CEC8]/60 uppercase tracking-widest mb-2 pointer-events-none">Highest Score</p>
-              <p className="text-[48px] font-black text-[#00CEC8] leading-none pointer-events-none">{quizResult.highestScore}<span className="text-[24px]">%</span></p>
-          </MagicBento>
+          {/* 5. HIGHEST SCORE */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.6, ease: "easeOut" }}
+            className="col-span-1 row-span-1 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-[#00CEC8]/30 transition-colors z-20">
+                <p className="text-[13px] font-bold text-[#00CEC8]/60 uppercase tracking-widest mb-2 pointer-events-none">Highest Score</p>
+                <p className="text-[48px] font-black text-[#00CEC8] leading-none pointer-events-none">{quizResult.highestScore}<span className="text-[24px]">%</span></p>
+            </MagicBento>
+          </motion.div>
 
-          {/* 6. LOWEST SCORE (Square: 1x1) */}
-          <MagicBento className="col-span-1 row-span-1 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-red-500/30 transition-colors z-20">
-              <p className="text-[13px] font-bold text-red-400/60 uppercase tracking-widest mb-2 pointer-events-none">Lowest Score</p>
-              <p className="text-[48px] font-black text-red-400 leading-none pointer-events-none">{quizResult.lowestScore}<span className="text-[24px]">%</span></p>
-          </MagicBento>
+          {/* 6. LOWEST SCORE */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, ease: "easeOut" }}
+            className="col-span-1 row-span-1 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-red-500/30 transition-colors z-20">
+                <p className="text-[13px] font-bold text-red-400/60 uppercase tracking-widest mb-2 pointer-events-none">Lowest Score</p>
+                <p className="text-[48px] font-black text-red-400 leading-none pointer-events-none">{quizResult.lowestScore}<span className="text-[24px]">%</span></p>
+            </MagicBento>
+          </motion.div>
 
-          {/* 7. MEDIUM SCORE (Square: 1x1) */}
-          <MagicBento className="col-span-1 row-span-1 h-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-blue-400/30 transition-colors z-20">
-              <p className="text-[13px] font-bold text-blue-400/60 uppercase tracking-widest mb-2 pointer-events-none">Medium Score</p>
-              <p className="text-[48px] font-black text-blue-400 leading-none pointer-events-none">{quizResult.mediumScore}<span className="text-[24px]">%</span></p>
-          </MagicBento>
+          {/* 7. MEDIUM SCORE */}
+          <motion.div
+            initial={{ opacity: 0, y: 50 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="col-span-1 row-span-1 h-full"
+          >
+            <MagicBento className="h-full w-full bg-[#0A0A0A] border border-white/5 rounded-[32px] p-8 flex flex-col justify-end group hover:border-blue-400/30 transition-colors z-20">
+                <p className="text-[13px] font-bold text-blue-400/60 uppercase tracking-widest mb-2 pointer-events-none">Medium Score</p>
+                <p className="text-[48px] font-black text-blue-400 leading-none pointer-events-none">{quizResult.mediumScore}<span className="text-[24px]">%</span></p>
+            </MagicBento>
+          </motion.div>
 
         </div>
       </main>

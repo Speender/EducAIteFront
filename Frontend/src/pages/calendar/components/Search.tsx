@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 interface Event {
     date: string;
@@ -46,7 +47,14 @@ const Search = ({ events, onResultClick }: Props) => {
     };
 
     return (
-        <div className="relative" ref={dropdownRef}>
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="relative" 
+            ref={dropdownRef}
+        >
             <div className="flex items-center bg-black border-[1.5px] border-white/20 rounded-full w-full md:w-[350px] lg:w-[400px] pl-5 pr-1.5 py-1.5 transition-colors focus-within:border-[#00CEC8] shadow-[0_0_15px_rgba(255,255,255,0.03)]">
                 {/* Search Icon */}
                 <div className="text-white mr-3 shrink-0">
@@ -95,7 +103,7 @@ const Search = ({ events, onResultClick }: Props) => {
                     )}
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 };
 

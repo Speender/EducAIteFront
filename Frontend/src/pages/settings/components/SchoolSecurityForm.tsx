@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 // Reusable Input Field
 const InputField: React.FC<{ label: string; placeholder: string; type?: string }> = 
@@ -17,7 +18,13 @@ const InputField: React.FC<{ label: string; placeholder: string; type?: string }
 
 const SchoolSecurityForm: React.FC = () => {
   return (
-    <div className="w-full relative z-10">
+    // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION ---
+    <motion.div 
+      initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+      animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+      className="w-full relative z-10"
+    >
       
       {/* --- SCHOOL SECTION --- */}
       <div className="border-t-[1.5px] border-white/10 pt-10 pb-12 mb-10 flex flex-col md:flex-row gap-10">
@@ -76,7 +83,7 @@ const SchoolSecurityForm: React.FC = () => {
 
       </div>
 
-    </div>
+    </motion.div>
   );
 };
 

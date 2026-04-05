@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 const AnalyticsHeader = () => {
   // 1. State for controlling the modal visibility
@@ -12,7 +13,13 @@ const AnalyticsHeader = () => {
 
   return (
     <>
-      <div className="flex items-center w-full py-8 text-white bg-black">
+      {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN ANIMATION --- */}
+      <motion.div 
+        initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+        animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+        transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+        className="flex items-center w-full py-8 text-white bg-black"
+      >
         {/* Left Group: Date & Buttons */}
         <div className="flex items-center gap-6 shrink-0">
           {/* The Circle */}
@@ -51,7 +58,7 @@ const AnalyticsHeader = () => {
             Here's your performance summary this week!
           </p>
         </div>
-      </div>
+      </motion.div>
 
       {/* =========================================
           THE DATE PICKER MODAL

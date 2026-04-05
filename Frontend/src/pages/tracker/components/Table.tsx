@@ -1,4 +1,5 @@
 import React from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 interface Props {
     data: any[]
@@ -26,7 +27,13 @@ const Table = ({ data }: Props) => {
     }
 
     return (
-        <div className="w-full overflow-x-auto bg-[#111111] rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-UP ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
+            animate={{ opacity: 1, y: 0 }}    // Slides up into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="w-full overflow-x-auto bg-[#111111] rounded-3xl border border-white/10 shadow-[0_8px_30px_rgba(0,0,0,0.3)]"
+        >
             <table className="w-full text-left border-collapse">
                 <thead>
                     <tr className="border-b border-white/10 bg-white/[0.02]">
@@ -71,7 +78,7 @@ const Table = ({ data }: Props) => {
                     )}
                 </tbody>
             </table>
-        </div>
+        </motion.div>
     );
 };
 

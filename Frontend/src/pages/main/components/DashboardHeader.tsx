@@ -1,9 +1,16 @@
 import React from 'react';
+import { motion } from 'framer-motion';
 import Search from './Search';
 
 const DashboardHeader: React.FC = () => {
     return (
-        <div className="flex flex-col items-center w-full mb-12">
+        // --- ADDED MOTION.DIV WITH SLIDE-IN ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="flex flex-col items-center w-full mb-12"
+        >
 
             {/* Welcome Text */}
             <div className="text-center w-full max-w-[800px] mb-8">
@@ -17,7 +24,8 @@ const DashboardHeader: React.FC = () => {
 
             {/* Search Bar */}
             <Search />
-        </div>
+            
+        </motion.div>
     );
 };
 

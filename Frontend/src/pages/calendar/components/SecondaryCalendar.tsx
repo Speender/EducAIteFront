@@ -1,4 +1,5 @@
 import React, { useEffect, useState, type JSX } from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 import MonthYearSelector from './MonthYearSelector';
 
 interface Props {
@@ -65,7 +66,13 @@ const SecondaryCalendar = ({ month, year, day, onDateChange }: Props) => {
     };
 
     return (
-        <div className="bg-[#111111] text-white p-5 rounded-2xl border-[1.5px] border-white/20 shadow-lg">
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="bg-[#111111] text-white p-5 rounded-2xl border-[1.5px] border-white/20 shadow-lg"
+        >
             <div className="flex justify-between items-center mb-4">
                 <span className="font-bold text-white text-lg">
                     {date.toLocaleString('default', { month: 'long' })} {date.getFullYear()}
@@ -89,7 +96,7 @@ const SecondaryCalendar = ({ month, year, day, onDateChange }: Props) => {
             <div className="grid grid-cols-7 gap-1">
                 {renderDays()}
             </div>
-        </div>
+        </motion.div>
     );
 };
 

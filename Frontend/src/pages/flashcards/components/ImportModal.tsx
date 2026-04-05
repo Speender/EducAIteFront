@@ -1,4 +1,5 @@
 import React, { useRef } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 // Adjust these paths based on your actual folder structure
 import pdfIcon from '../../../assets/pdf-logo.svg'; 
 import wordIcon from '../../../assets/word-logo.svg';
@@ -19,17 +20,25 @@ export function ImportModal({ onClose }: ImportModalProps) {
     const files = event.target.files;
     if (files && files.length > 0) {
       console.log("File selected:", files[0].name);
-      // Logic for processing the file goes here
     }
   };
 
   return (
-    <div 
-      className="fixed inset-0 bg-black/70 backdrop-blur-md z-[150] flex items-center justify-center p-4 animate-in fade-in duration-300"
+    /* --- BACKDROP ANIMATION --- */
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 bg-black/70 backdrop-blur-md z-[150] flex items-center justify-center p-4"
       onClick={onClose}
     >
-      <div 
-        className="bg-[#050505] w-full max-w-[600px] rounded-[32px] border border-white/10 p-10 relative shadow-[0_20px_80px_rgba(0,0,0,0.8)] animate-in zoom-in-95 duration-200"
+      {/* --- MODAL CONTENT POP-UP ANIMATION --- */}
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+        className="bg-[#050505] w-full max-w-[600px] rounded-[32px] border border-white/10 p-10 relative shadow-[0_20px_80px_rgba(0,0,0,0.8)]"
         onClick={(e) => e.stopPropagation()} 
       >
         {/* Close Button */}
@@ -50,7 +59,6 @@ export function ImportModal({ onClose }: ImportModalProps) {
           onClick={handleDivClick}
           className="border-2 border-dashed border-white/10 rounded-[24px] p-12 flex flex-col items-center gap-8 mb-8 group hover:border-[#00CEC8]/40 hover:bg-white/[0.02] transition-all cursor-pointer"
         >
-          {/* Hidden File Input */}
           <input 
             type="file" 
             ref={fileInputRef} 
@@ -73,7 +81,7 @@ export function ImportModal({ onClose }: ImportModalProps) {
           </div>
         </div>
 
-        {/* Input Field Section (Link/URL) */}
+        {/* Input Field Section */}
         <div className="flex gap-3 mb-10 h-14">
           <div className="w-16 bg-white/5 border border-white/10 rounded-2xl flex items-center justify-center text-white/40">
             <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -97,8 +105,8 @@ export function ImportModal({ onClose }: ImportModalProps) {
             Continue
           </button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }
 

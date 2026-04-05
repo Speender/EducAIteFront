@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
 
 interface Props {
     selections: string[],
@@ -27,7 +28,14 @@ const DropdownSemester = ({ selections, currentSelection, onSelectChange }: Prop
     };
 
     return (
-        <div className="relative w-full md:w-72 z-50" ref={dropdownRef}>
+        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION ---
+        <motion.div 
+            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
+            animate={{ opacity: 1, x: 0 }}    // Slides into its original position
+            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            className="relative w-full md:w-72 z-50" 
+            ref={dropdownRef}
+        >
             
             {/* The Main Button */}
             <button
@@ -72,7 +80,7 @@ const DropdownSemester = ({ selections, currentSelection, onSelectChange }: Prop
                     </ul>
                 </div>
             )}
-        </div>
+        </motion.div>
     );
 }
 

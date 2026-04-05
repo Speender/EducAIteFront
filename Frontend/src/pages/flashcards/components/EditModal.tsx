@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { motion } from 'framer-motion'; // Ensure framer-motion is installed
 
 interface EditModalProps {
   title: string;          
@@ -18,8 +19,23 @@ export const EditModal: React.FC<EditModalProps> = ({
   const [value, setValue] = useState(initialValue);
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4">
-      <div className="bg-[#0A0A0A] border border-white/10 w-full max-w-md rounded-[40px] p-10 shadow-2xl animate-in fade-in zoom-in-95 duration-200">
+    /* --- BACKDROP FADE-IN --- */
+    <motion.div 
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 backdrop-blur-md p-4"
+      onClick={onClose}
+    >
+      {/* --- MODAL CONTENT POP-UP --- */ }
+      <motion.div 
+        initial={{ opacity: 0, scale: 0.9, y: 20 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.9, y: 20 }}
+        transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
+        className="bg-[#0A0A0A] border border-white/10 w-full max-w-md rounded-[40px] p-10 shadow-2xl"
+        onClick={(e) => e.stopPropagation()} // Prevents closing when clicking inside modal
+      >
         
         <h2 className="text-2xl font-bold mb-2 text-white">{title}</h2>
         <p className="text-white/40 text-sm mb-8 uppercase tracking-widest font-bold">{label}</p>
@@ -28,7 +44,7 @@ export const EditModal: React.FC<EditModalProps> = ({
           autoFocus
           value={value}
           onChange={(e) => setValue(e.target.value)}
-          onKeyDown={(e) => e.key === 'Enter' && onSave(value)}
+          onKeyDown={(e) => e.key === 'Enter' && value.trim() && onSave(value)}
           className="w-full bg-white/[0.03] border border-white/10 rounded-2xl px-6 py-4 text-white text-lg outline-none focus:border-[#00CEC8]/50 transition-all mb-10"
           placeholder="Type here..."
         />
@@ -40,15 +56,17 @@ export const EditModal: React.FC<EditModalProps> = ({
           >
             Cancel
           </button>
-          <button 
+          <motion.button 
+            whileHover={value.trim() ? { scale: 1.05 } : {}}
+            whileTap={value.trim() ? { scale: 0.95 } : {}}
             onClick={() => onSave(value)}
             disabled={!value.trim()}
-            className="flex-1 px-6 py-4 rounded-full bg-[#00CEC8] text-black font-bold hover:scale-105 active:scale-95 transition-all disabled:opacity-50 disabled:hover:scale-100"
+            className="flex-1 px-6 py-4 rounded-full bg-[#00CEC8] text-black font-bold transition-all disabled:opacity-50 disabled:cursor-not-allowed shadow-[0_0_20px_rgba(0,206,200,0.2)]"
           >
             Save Changes
-          </button>
+          </motion.button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };
