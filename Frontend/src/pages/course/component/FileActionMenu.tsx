@@ -1,20 +1,19 @@
 import React, { useState } from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
-import { ExportModal } from '../../flashcards/components/ExportModal'; // <-- Make sure this path matches your folder structure!
+import { motion } from 'framer-motion'; 
+
+import { ExportModal } from '../../flashcards/components/ExportModal';
 
 interface FileActionMenuProps {
   onClose: () => void;
-  onDownload?: () => void; // Made optional since we handle it internally now
+  onDownload?: () => void; 
   onDelete: () => void;
 }
 
 const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) => {
-  // 1. Add state directly inside the menu component
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
 
   return (
     <>
-      {/* Invisible backdrop to close the menu when clicking outside (Disabled while modal is open) */}
       {!isExportModalOpen && <div className="fixed inset-0 z-[110]" onClick={onClose} />}
       
       {/* --- ANIMATED DROPDOWN MENU --- */}
@@ -23,18 +22,16 @@ const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.8, y: -10 }}
         transition={{ type: "spring", damping: 25, stiffness: 400 }}
-        style={{ originX: 1, originY: 0 }} // Makes it pop out from the top-right corner!
+        style={{ originX: 1, originY: 0 }}
         className={`absolute top-10 right-0 w-[220px] bg-[#050505]/95 backdrop-blur-xl border border-white/10 rounded-[20px] overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-[120] transition-opacity duration-200 ${isExportModalOpen ? 'opacity-0 pointer-events-none' : 'opacity-100'}`}
         onClick={(e) => e.stopPropagation()}
       >
         
-        {/* =========================================
-            DOWNLOAD OPTION
-            ========================================= */}
+        {/* DOWNLOAD OPTION */}
         <button 
           onClick={() => {
-            if (onDownload) onDownload(); // Optional callback
-            setIsExportModalOpen(true);   // 2. Open the modal (Notice we DO NOT call onClose() here!)
+            if (onDownload) onDownload(); 
+            setIsExportModalOpen(true);   
           }}
           className="w-full flex items-center gap-4 p-4 hover:bg-white/5 transition-colors border-b border-white/5 group text-left"
         >
@@ -49,13 +46,11 @@ const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) 
           </div>
         </button>
 
-        {/* =========================================
-            DELETE OPTION
-            ========================================= */}
+        {/* DELETE OPTION */}
         <button 
           onClick={() => { 
             onDelete(); 
-            onClose();  // Delete closes the menu immediately
+            onClose(); 
           }}
           className="w-full flex items-center gap-4 p-4 hover:bg-red-500/10 transition-colors group text-left"
         >
@@ -79,8 +74,8 @@ const FileActionMenu = ({ onClose, onDownload, onDelete }: FileActionMenuProps) 
         <ExportModal 
           fileName="Database_Management_System_Cards"
           onClose={() => {
-            setIsExportModalOpen(false); // Close the modal
-            onClose();                   // AND close the parent menu
+            setIsExportModalOpen(false); 
+            onClose();                
           }}
           onExport={() => {
             console.log("Starting download...");

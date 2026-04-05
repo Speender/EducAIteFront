@@ -13,7 +13,7 @@ const MainPage: React.FC = () => {
 
             <Logo />
 
-            {/* 2. Main Content Container */}
+            {/* Main Content Container */}
             <main className="max-w-[1280px] mx-auto px-6 pt-32 relative z-10 flex flex-col items-center">
 
                 {/* Top Section: Text and Search */}
@@ -24,14 +24,14 @@ const MainPage: React.FC = () => {
 
             </main>
 
-            {/* 3. Floating Robot (Bottom Right) */}
+            {/* Floating Robot (Bottom Right) */}
             <img
                 src={robotImg}
                 alt="AI Robot avatar"
                 className="absolute bottom-20 right-10 w-[140px] h-auto object-contain drop-shadow-[0_10px_30px_rgba(0,0,0,0.8)] z-50 pointer-events-none transform scale-x-[-1] animate-[float_3s_ease-in-out_infinite]"
             />
 
-            {/* 4. Earth Background */}
+            {/* Earth Background */}
             <div className="absolute bottom-0 left-0 w-full h-[60%] z-0 pointer-events-none">
                 <img
                     src={EarthBg}
@@ -40,7 +40,6 @@ const MainPage: React.FC = () => {
                     style={{ maskImage: 'linear-gradient(to top, black, transparent)' }}
                 />
             </div>
-
         </div>
     );
 };

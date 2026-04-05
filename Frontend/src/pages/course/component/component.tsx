@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react';
 
 export const SemesterDropdown = () => {
-  // Your options mapped out
   const options = [
     '3rd Year - First Semester', 
     '3rd Year - Second Semester'
@@ -69,7 +68,6 @@ export const SemesterDropdown = () => {
               </li>
             ))}
           </ul>
-          
         </div>
       )}
     </div>

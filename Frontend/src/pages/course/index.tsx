@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react'
-import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion' 
 import CourseCard from './component/CourseCard'
 import { SemesterDropdown } from './component/component'
 import UploadModal from './component/UploadModal'
@@ -8,7 +8,6 @@ import Logo from '../../components/Logo';
 import { courses } from '../../data/courses'
 
 const CoursePage = () => {
-  // --- Custom Drag-to-Scroll Logic ---
   const scrollRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
   const startX = useRef(0);
@@ -36,42 +35,48 @@ const CoursePage = () => {
 
   return (
     <>
-      <div className="min-h-screen bg-black text-white pt-32 pb-12 px-8 lg:px-16 font-sans relative overflow-x-hidden antialiased">
+      {/* 1. Increased pt-32 to pt-40 on mobile to clear the floating Navbar 
+          2. Added relative z-0 to the main container
+      */}
+      <div className="min-h-screen bg-black text-white pt-40 lg:pt-32 pb-12 px-6 lg:px-16 font-sans relative overflow-x-hidden antialiased">
         <Logo />
         
-        {/* SEMESTER DROPDOWN: Slides in from the right */}
+        {/* FIX: SEMESTER DROPDOWN 
+            - Added z-[60] so it opens OVER the Navbar (z-50)
+            - Added mb-12 to push the hero text further down
+        */}
         <motion.div 
-          initial={{ opacity: 0, x: 100 }} 
-          animate={{ opacity: 1, x: 0 }}    
+          initial={{ opacity: 0, y: -20 }} 
+          animate={{ opacity: 1, y: 0 }}    
           transition={{ duration: 0.6, ease: "easeOut" }} 
-          className="flex justify-end mb-8 relative z-20 w-full max-w-[1600px] mx-auto"
+          className="flex justify-center lg:justify-end mb-12 relative z-[60] w-full max-w-[1600px] mx-auto"
         >
           <SemesterDropdown />
         </motion.div>
 
-        {/* ================= MAIN CONTENT ROW ================= */}
-        <div className="flex flex-col lg:flex-row items-start relative z-10 w-full max-w-[1600px] mx-auto">
+        {/* MAIN CONTENT ROW */}
+        <div className="flex flex-col lg:flex-row items-start relative z-10 w-full max-w-[1600px] mx-auto gap-12 lg:gap-0">
           
-          {/* ================= LEFT COLUMN: Slides in from the left ================= */}
+          {/* LEFT COLUMN */}
           <motion.div 
-            initial={{ opacity: 0, x: -100 }} 
+            initial={{ opacity: 0, x: -50 }} 
             animate={{ opacity: 1, x: 0 }}    
             transition={{ duration: 0.6, ease: "easeOut" }} 
-            className="w-full lg:w-[420px] flex-shrink-0 flex flex-col pr-8 lg:pr-16 relative z-10 pt-2"
+            className="w-full lg:w-[420px] flex-shrink-0 flex flex-col lg:pr-16 relative z-10 pt-2 text-center lg:text-left items-center lg:items-start"
           >
             <div className="space-y-6">
-              <h1 className="text-5xl lg:text-[36px] font-semibold leading-[1.15]">
+              <h1 className="text-4xl lg:text-[36px] font-semibold leading-[1.15]">
                 Ace <span className="text-[#00CEC8]">The</span> Semester.<br />
                 Learn Smarter.<br />
                 Organize <span className="text-[#00CEC8]">Better</span>.
               </h1>
               
-              <p className="text-white/70 leading-relaxed text-[15px] max-w-[340px] pt-2">
+              <p className="text-white/70 leading-relaxed text-[15px] max-w-[340px] pt-2 mx-auto lg:mx-0">
                 Your current semester study load at a glance. Easily renew for the next term, 
                 view your subjects, and dive into notes or flashcards — all in one place.
               </p>
               
-              <div className="flex items-center gap-2 font-medium pt-2">
+              <div className="flex items-center gap-2 font-medium pt-2 justify-center lg:justify-start">
                 <span className="text-lg">📅</span>
                 <p className="text-[14px]">Current Study Load: <span className="text-[#00CEC8] font-bold">3rd Year - 1st Semester</span></p>
               </div>
@@ -80,7 +85,7 @@ const CoursePage = () => {
                 <p className="text-[10px] text-white/50 mb-3 uppercase tracking-wider font-semibold">Upload / Renew Study Load</p>
                 <button 
                   onClick={() => setIsUploadModalOpen(true)}
-                  className="bg-white text-black font-bold px-12 py-3 rounded-xl hover:bg-gray-200 transition-all mb-4"
+                  className="bg-white text-black font-bold w-full lg:w-auto lg:px-12 py-3 rounded-xl hover:bg-gray-200 transition-all mb-4 active:scale-95"
                 >
                   Upload
                 </button>
@@ -89,7 +94,7 @@ const CoursePage = () => {
             </div>
           </motion.div>
 
-          {/* ================= VERTICAL DIVIDER LINE: Fades in ================= */}
+          {/* VERTICAL DIVIDER */}
           <motion.div 
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -97,31 +102,25 @@ const CoursePage = () => {
             className="hidden lg:block w-[1.5px] bg-white/20 h-[480px] mt-4 relative z-20 rounded-full" 
           />
 
-          {/* ================= RIGHT COLUMN (DRAGGABLE CARDS): Slides in from the right ================= */}
+          {/* RIGHT COLUMN */}
           <motion.div 
-            initial={{ opacity: 0, x: 100 }} 
+            initial={{ opacity: 0, x: 50 }} 
             animate={{ opacity: 1, x: 0 }}    
-            transition={{ duration: 0.6, ease: "easeOut" }} 
+            transition={{ duration: 0.6, ease: "easeOut", delay: 0.2 }} 
             ref={scrollRef}
             onMouseDown={handleMouseDown}
             onMouseLeave={handleMouseLeave}
             onMouseUp={handleMouseUp}
             onMouseMove={handleMouseMove}
-            className="flex-1 w-full overflow-x-auto hide-scrollbar cursor-grab active:cursor-grabbing select-none relative z-10"
+            className="flex-1 w-full overflow-x-auto no-scrollbar cursor-grab active:cursor-grabbing select-none relative z-10 touch-pan-x"
           >
-            {/* Added py-8 so shadows on bottom of cards don't clip */}
             <div className="flex gap-6 w-max pointer-events-none py-8">
-              
-              {/* THE INVISIBLE SPACER: Keeps first card away from line at rest */}
-              <div className="w-8 flex-shrink-0" />
-
+              <div className="w-0 lg:w-8 flex-shrink-0" />
                 {courses.map((course) => (
                   <div key={course.id} className="pointer-events-auto">
                     <CourseCard {...course} />
                   </div>
                 ))}
-
-              {/* Trailing spacer */}
               <div className="w-16 flex-shrink-0" />
             </div>
           </motion.div>
@@ -129,7 +128,7 @@ const CoursePage = () => {
         </div>
       </div>
 
-      {/* ================= UPLOAD MODAL ================= */}
+      {/* UPLOAD MODAL */}
       {isUploadModalOpen && (
         <UploadModal onClose={() => setIsUploadModalOpen(false)} />
       )}
@@ -137,4 +136,4 @@ const CoursePage = () => {
   )
 }
 
-export default CoursePage
+export default CoursePage;

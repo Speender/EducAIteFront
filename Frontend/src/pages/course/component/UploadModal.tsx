@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from 'react'
-import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion'
+
 import logo from '../../../assets/educAIte-logo.svg'
 
 interface UploadModalProps {

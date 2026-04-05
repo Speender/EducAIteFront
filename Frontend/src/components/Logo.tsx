@@ -7,11 +7,11 @@ const Logo: React.FC = () => {
 
   return (
     <div 
-      className="fixed top-10 left-12 z-[100] cursor-pointer hover:scale-105 transition-transform active:scale-95"
+      className="fixed top-6 left-6 md:top-10 md:left-12 z-[100] cursor-pointer hover:scale-105 transition-transform active:scale-95"
       onClick={() => navigate('/main')}
       title="Go to Dashboard"
     >
-      <img src={logo} alt="educAIte" className="h-10 w-auto" />
+      <img src={logo} alt="educAIte" className="h-8 md:h-10 w-auto" />
     </div>
   );
 };

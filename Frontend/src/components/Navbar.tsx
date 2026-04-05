@@ -1,10 +1,10 @@
 import React from 'react'
-import { NavLink, useLocation } from 'react-router-dom' // Added useLocation
-import { motion } from 'framer-motion' // <-- IMPORT FRAMER MOTION
+import { NavLink, useLocation } from 'react-router-dom' 
+import { motion } from 'framer-motion' 
 import settingIcon from '../assets/setting-navbar.svg'
 
 const Navbar = () => {
-  const location = useLocation(); // Get current path
+  const location = useLocation();
 
   const navItems = [
     { name: 'Home', path: '/main' }, 
@@ -16,49 +16,50 @@ const Navbar = () => {
     { name: 'Resume', path: '/resume' },
   ]
 
-  // Helper to determine if the Flashcards tab should be lit up
   const isFlashcardRoute = (path: string, itemName: string) => {
     if (itemName === 'Flashcards') {
-      const flashcardRelatedPaths = [
-        '/flashcards', 
-        '/cards', 
-        '/create-card', 
-        '/learn', 
-        '/code-learn', 
-        '/code-challenge', 
-        '/performance'
-      ];
+      const flashcardRelatedPaths = ['/flashcards', '/cards', '/create-card', '/learn', '/code-learn', '/code-challenge', '/performance'];
       return flashcardRelatedPaths.some(p => location.pathname.startsWith(p));
     }
     return location.pathname.startsWith(path);
   };
 
   return (
-    // --- CONVERTED TO MOTION.HEADER WITH SLIDE-DOWN ANIMATION ---
     <motion.header 
-      initial={{ opacity: 0, y: -50 }} // Starts transparent and 50px higher
-      animate={{ opacity: 1, y: 0 }}   // Slides down to its natural position
-      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s drop
-      className="flex justify-center pt-8 fixed w-full z-50 pointer-events-none"
+      initial={{ opacity: 0, y: -50 }} 
+      animate={{ opacity: 1, y: 0 }} 
+      transition={{ duration: 0.6, ease: "easeOut" }} 
+      /* Adjusted padding for mobile screens */
+      className="flex justify-center pt-20 md:pt-8 fixed w-full z-50 pointer-events-none px-4"
     >
-      <nav className="flex items-center bg-black/50 backdrop-blur-md border-[1.5px] border-white/20 px-8 py-3 rounded-full gap-8 shadow-[0_8px_30px_rgba(255,255,255,0.15)] pointer-events-auto">
+      <nav className="
+        flex items-center 
+        bg-black/60 backdrop-blur-xl 
+        border-[1.5px] border-white/20 
+        px-6 md:px-8 py-3 
+        rounded-full gap-6 md:gap-8 
+        shadow-[0_8px_30px_rgba(0,0,0,0.5)] 
+        pointer-events-auto
+        /* Mobile horizontal scroll logic */
+        max-w-full overflow-x-auto no-scrollbar
+      ">
         
         {navItems.map((item) => {
-          // Calculate active state manually to include the floating root routes
           const active = isFlashcardRoute(item.path, item.name);
 
           return (
             <NavLink
               key={item.name}
               to={item.path}
-              className={`relative group text-sm transition-all pb-1 ${
+              /* whitespace-nowrap prevents text wrapping during scroll */
+              className={`relative group text-xs md:text-sm transition-all pb-1 whitespace-nowrap ${
                 active ? 'text-white font-bold' : 'text-gray-400 hover:text-white'
               }`}
             >
               {item.name}
               
-              {/* Animated Underline */}
-              <span 
+              <motion.span 
+                layoutId="underline" /* Framer Motion magic for smooth underline sliding */
                 className={`absolute bottom-0 left-0 h-[2px] rounded-full transition-all duration-300 ${
                   active 
                     ? 'w-full bg-[#00CEC8] shadow-[0_0_10px_rgba(0,206,200,0.8)]' 
@@ -69,20 +70,17 @@ const Navbar = () => {
           );
         })}
 
-        {/* --- SETTING ICON CONTAINER --- */}
         <NavLink 
           to="/settings" 
-          className={({ isActive }) =>
-            `-ml-2 -mt-1 relative group flex items-center justify-center transition-all pb-1 -ml-4 mt-0.5`
-          }
+          className="relative group flex items-center justify-center transition-all pb-1 shrink-0"
         >
           {({ isActive }) => (
             <>
               <img 
                 src={settingIcon} 
                 alt="Settings" 
-                className={`w-5 h-5 brightness-0 invert transition-opacity ${
-                  isActive ? 'opacity-100' : 'opacity-80 group-hover:opacity-100'
+                className={`w-4 h-4 md:w-5 md:h-5 brightness-0 invert transition-opacity ${
+                  isActive ? 'opacity-100' : 'opacity-60 group-hover:opacity-100'
                 }`} 
               />
               <span 
@@ -95,10 +93,9 @@ const Navbar = () => {
             </>
           )}
         </NavLink>
-        
       </nav>
     </motion.header>
   )
 }
 
-export default Navbar
+export default Navbar;

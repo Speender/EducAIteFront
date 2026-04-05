@@ -1,12 +1,10 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-
 import { motion, type Variants } from 'framer-motion';
 
 const BentoCards: React.FC = () => {
   const navigate = useNavigate();
-  
-  // 2. EXPLICITLY TYPE AS 'Variants'
+
   const containerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
@@ -17,7 +15,6 @@ const BentoCards: React.FC = () => {
     }
   };
 
-  // 3. EXPLICITLY TYPE AS 'Variants'
   const itemVariants: Variants = {
     hidden: { opacity: 0, y: 50 }, 
     show: { opacity: 1, y: 0, transition: { type: "spring", stiffness: 100, damping: 15 } } 
@@ -39,7 +36,6 @@ const BentoCards: React.FC = () => {
         </div>
         <div className="flex items-center gap-6">
           <div className="relative w-24 h-24 rounded-full border-[6px] border-[#111111] flex items-center justify-center">
-             {/* Simple CSS Circle Progress */}
             <div className="absolute inset-[-6px] rounded-full border-[6px] border-[#00CEC8]" style={{ clipPath: 'polygon(50% 50%, 50% 0%, 100% 0%, 100% 100%, 0% 100%, 0% 16%)' }}></div>
             <span className="text-xl font-bold text-white group-hover:text-[#00CEC8] transition-colors">84%</span>
           </div>
@@ -135,7 +131,6 @@ const BentoCards: React.FC = () => {
           Edit Resume
         </button>
       </motion.div>
-
     </motion.div>
   );
 };

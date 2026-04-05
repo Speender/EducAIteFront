@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useParams } from 'react-router-dom'
-import { courses } from '../../../data/courses'
-import logo from '../../../assets/educAIte-logo.svg'
 import { motion } from 'framer-motion'
 
-// Component Imports
+import { courses } from '../../../data/courses'
+import logo from '../../../assets/educAIte-logo.svg'
 import ImportFileModal from './ImportFileModal'
 import CreateMenu from './CreateMenu'
 import FileActionMenu from './FileActionMenu'
@@ -65,8 +64,6 @@ const CourseDetails = () => {
 
   // --- FUNCTION: Delete a file/folder ---
   const handleDeleteFile = (fileNameToDelete: string) => {
-    // Note: If you want to permanently delete saved notes, you would also 
-    // update localStorage here. For now, it just removes it from the current view.
     setFiles(prevFiles => prevFiles.filter(file => file.name !== fileNameToDelete));
     setActiveMenuFile(null); // Close the menu after deleting
   };
@@ -113,9 +110,9 @@ const CourseDetails = () => {
         <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-16">
           {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION --- */}
           <motion.div 
-            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: -100 }} 
+            animate={{ opacity: 1, x: 0 }}  
+            transition={{ duration: 0.6, ease: "easeOut" }}
           >
               <h1 className="text-5xl font-medium mb-4 tracking-tight">Files</h1>
               <h2 className="text-[#00CEC8] text-4xl font-semibold leading-tight">
@@ -148,11 +145,10 @@ const CourseDetails = () => {
           </motion.div>
 
           {/* Search Section */}
-          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION --- */}
           <motion.div 
-            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: 100 }} 
+            animate={{ opacity: 1, x: 0 }}   
+            transition={{ duration: 0.6, ease: "easeOut" }} 
             className="w-full max-w-xl"
           >
             <p className="text-white text-xl font-medium mb-4">Search files</p>
@@ -174,11 +170,10 @@ const CourseDetails = () => {
         </div>
 
         {/* Files Grid */}
-        {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
         <motion.div 
-          initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
-          animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
-          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+          initial={{ opacity: 0, y: 50 }} 
+          animate={{ opacity: 1, y: 0 }}   
+          transition={{ duration: 0.6, ease: "easeOut" }}
           className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6"
         >
           
@@ -200,7 +195,6 @@ const CourseDetails = () => {
                 <button 
                   onClick={(e) => {
                     e.stopPropagation();
-                    // Toggle by file name
                     setActiveMenuFile(activeMenuFile === file.name ? null : file.name);
                   }}
                   className={`p-1 rounded-full transition-colors ${activeMenuFile === file.name ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
@@ -214,7 +208,6 @@ const CourseDetails = () => {
                   <FileActionMenu 
                     onClose={() => setActiveMenuFile(null)}
                     onDownload={() => console.log('Download', file.name)}
-                    // Pass the file name to the delete function
                     onDelete={() => handleDeleteFile(file.name)}
                   />
                 )}

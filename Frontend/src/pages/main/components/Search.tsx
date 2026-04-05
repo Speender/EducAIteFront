@@ -1,6 +1,4 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
-// import { useNavigate } from 'react-router-dom'; //for when routing is implemented
-
 
 interface SearchItem {
     id: number;
@@ -9,7 +7,6 @@ interface SearchItem {
     path: string;
 }
 
-//todo: adjust to actual provided data
 const mockData: SearchItem[] = [
     { id: 1, title: "Advanced React Patterns", scope: "courses", path: "/courses/react-patterns" },
     { id: 2, title: "Frontend Developer Resume 2024", scope: "resume", path: "/resume/edit/1" },
@@ -24,8 +21,6 @@ const Search: React.FC = () => {
     const [isOpen, setIsOpen] = useState(false);
     const wrapperRef = useRef<HTMLDivElement>(null);
     
-    // const navigate = useNavigate();
-
     const filteredResults = useMemo(() => {
         if (!query.trim()) return [];
         return mockData.filter(item => 
@@ -33,16 +28,11 @@ const Search: React.FC = () => {
         );
     }, [query]);
 
-    //todo: routing placeholder
     const handleSelectResult = (item: SearchItem) => {
         console.log(`Navigating to: ${item.path}`);
 
         setQuery(item.title);
         setIsOpen(false);
-
-        //navigate(item.path); 
-        
-        //Optional: Add to "Recent Searches" in LocalStorage here
     };
 
     useEffect(() => {
