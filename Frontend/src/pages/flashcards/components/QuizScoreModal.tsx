@@ -1,6 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom'; 
-import { motion } from 'framer-motion'; // <-- Import Framer Motion
+import { motion } from 'framer-motion'; 
+
 import BorderGlow from '../../../components/BorderGlow';
 import AImpatin from '../../../assets/robot.svg'; 
 
@@ -38,30 +39,28 @@ export function QuizScoreModal({ score, message, onClose }: QuizScoreModalProps)
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 30 }}
         transition={{ type: "spring", duration: 0.6, bounce: 0.4 }}
-        className="w-full max-w-[550px] shadow-[0_0_80px_rgba(0,0,0,0.8)] rounded-[32px]"
+        className="w-full max-w-[550px] shadow-[0_0_80px_rgba(0,0,0,0.8)] rounded-3xl lg:rounded-[32px]"
       >
         <BorderGlow>
-          
-          <div className="w-full h-full rounded-[30px] bg-[#0A0A0A] p-12 text-center relative">
-            
-            <h2 className="text-[28px] font-bold text-white mb-10 mx-auto max-w-[400px] leading-[1.3]">
+          <div className="w-full h-full rounded-[22px] lg:rounded-[30px] bg-[#0A0A0A] px-6 py-8 lg:p-12 text-center relative flex flex-col items-center">
+            <h2 className="text-xl lg:text-[28px] font-bold text-white mb-6 lg:mb-10 mx-auto max-w-[400px] leading-[1.3]">
               Your score on the Technical Programming quiz
             </h2>
-            
-            <div className="relative w-[220px] h-[120px] mx-auto mb-10">
+
+            <div className="relative w-[160px] h-[85px] lg:w-[220px] lg:h-[120px] mx-auto mb-6 lg:mb-10">
               <svg viewBox="0 0 220 120" className="w-full h-full overflow-visible">
                 <path d={`M 10 ${cy} A ${radius} ${radius} 0 0 1 210 ${cy}`} fill="none" stroke="#E2E8F0" strokeWidth="16" strokeLinecap="round" strokeOpacity="0.1" />
                 <path 
                   d={`M 10 ${cy} A ${radius} ${radius} 0 0 1 210 ${cy}`} 
                   fill="none" stroke="#00CEC8" strokeWidth="16" strokeLinecap="round"
                   strokeDasharray={circumference} strokeDashoffset={dashoffset}
-                  className="transition-all duration-1000 ease-out delay-500" // Added delay to wait for modal pop
+                  className="transition-all duration-1000 ease-out delay-500" 
                 />
                 <circle cx={thumbX} cy={thumbY} r="10" fill="#00CEC8" stroke="#0A0A0A" strokeWidth="4" className="transition-all duration-1000 ease-out delay-500 shadow-lg" />
               </svg>
 
               <div className="absolute bottom-0 left-0 right-0 flex justify-center">
-                <span className="text-[40px] font-bold text-[#00CEC8] leading-none">
+                <span className="text-3xl lg:text-[40px] font-bold text-[#00CEC8] leading-none">
                   {score}%
                 </span>
               </div>
@@ -70,13 +69,13 @@ export function QuizScoreModal({ score, message, onClose }: QuizScoreModalProps)
               <motion.div 
                 animate={{ y: [0, -10, 0] }} 
                 transition={{ duration: 3, repeat: Infinity, ease: "easeInOut" }}
-                className="absolute -top-6 -right-16 drop-shadow-2xl"
+                className="absolute -top-8 -right-2 lg:-top-6 lg:-right-16 drop-shadow-2xl z-10"
               >
-                <img src={AImpatin} alt="bot" className="w-20 h-20 object-contain drop-shadow-xl" />
+                <img src={AImpatin} alt="bot" className="w-14 h-14 lg:w-20 lg:h-20 object-contain drop-shadow-xl" />
               </motion.div>
             </div>
 
-            <p className="mx-auto max-w-[440px] text-[17px] leading-[1.6] text-white/90 mb-10 font-medium">
+            <p className="mx-auto max-w-[440px] text-sm lg:text-[17px] leading-[1.6] text-white/90 mb-8 lg:mb-10 font-medium px-2">
               {message}
             </p>
 
@@ -87,7 +86,7 @@ export function QuizScoreModal({ score, message, onClose }: QuizScoreModalProps)
                 onClose(); 
                 navigate('/performance'); 
               }} 
-              className="w-48 rounded-full bg-white px-8 py-3.5 text-black font-bold shadow-md transition-colors duration-300 uppercase tracking-wide shadow-[0_0_20px_rgba(0,206,200,0.1)] hover:shadow-[0_0_25px_rgba(0,206,200,0.4)]"
+              className="w-full max-w-[220px] lg:w-48 rounded-full bg-white px-8 py-3 lg:py-3.5 text-black font-bold shadow-md transition-colors duration-300 uppercase tracking-wide text-sm lg:text-base shadow-[0_0_20px_rgba(0,206,200,0.1)] hover:shadow-[0_0_25px_rgba(0,206,200,0.4)]"
             >
               Confirm
             </motion.button>

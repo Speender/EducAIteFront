@@ -3,7 +3,7 @@ import Header from './components/Header'
 import DropdownSemester from './components/DropdownSemester'
 import Table from './components/Table'
 import Logo from '../../components/Logo';
-//all data here
+
 //stud name
 const name: string = "Christian"
 
@@ -19,7 +19,6 @@ const Semester = Object.freeze({
     FOURTH_YEAR_SECOND_SEM: "4th year - Second semester",
 })
 
-//grades from 1st year-1st sem to 2nd year-2nd sem only
 const data = [
     {
         semester: Semester.FIRST_YEAR_FIRST_SEM,
@@ -71,28 +70,27 @@ const Tracker: React.FC = () => {
     }
 
     return (
-        // Added standard page padding (pt-32) so it clears the global Navbar
-        <div className="min-h-screen bg-black text-white font-sans antialiased pt-32 pb-24 px-6 relative z-10">
+        <div className="min-h-[100dvh] bg-black text-white font-sans antialiased pt-36 lg:pt-32 pb-16 lg:pb-24 px-4 lg:px-8 relative z-10 overflow-x-hidden">
             <Logo />
             <div className="max-w-[1280px] mx-auto">
                 
-                {/* Header and Dropdown Container */}
-                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12 w-full">
-                    
-                    <Header name={name} semester={currentSem} />
+                <div className="flex flex-col lg:flex-row justify-between items-start lg:items-center gap-6 lg:gap-8 mb-8 lg:mb-12 w-full">
+                    <div className="w-full lg:w-auto">
+                        <Header name={name} semester={currentSem} />
+                    </div>
 
-                    <div className="shrink-0 relative z-20 w-full md:w-auto">
+                    <div className="shrink-0 relative z-20 w-full lg:w-auto">
                         <DropdownSemester
                             selections={Object.values(Semester)}
-                            // CHANGED: Pass the current selection down to the component
                             currentSelection={currentSem} 
                             onSelectChange={handleSemSelection}
                         />
                     </div>
                 </div>
 
-                {/* Table Container */}
-                <Table data={data.filter(s => s.semester === currentSem)[0]?.courses || []} />
+                <div className="w-full pb-6">
+                    <Table data={data.filter(s => s.semester === currentSem)[0]?.courses || []} />
+                </div>
                 
             </div>
         </div>

@@ -9,7 +9,6 @@ interface Props {
 const AddEventDialog = ({ isOpen, onClose, onSave }: Props) => {
     const [title, setTitle] = useState<string>('');
     const [date, setDate] = useState<string>(dateToStr(new Date()))
-    // Added a simple toggle to let them pick Event vs Note
     const [eventType, setEventType] = useState<string>('event');
 
     if (!isOpen) return null;

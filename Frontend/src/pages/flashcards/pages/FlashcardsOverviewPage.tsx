@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
+
 import DeckCard from '../components/DeckCard';
 import FlashcardOverviewSidebar from '../components/FlashcardOverviewSidebar';
 import SearchBar from '../components/SearchBar';
-import { useFlashcards } from '../hooks/useFlashcards';
 import { AddDeckModal } from '../components/AddDeckModal';
 import Logo from '../../../components/Logo';
-import { motion } from 'framer-motion';
+import { useFlashcards } from '../hooks/useFlashcards';
 
 export function FlashcardsOverviewPage() {
   const navigate = useNavigate();
@@ -14,40 +15,38 @@ export function FlashcardsOverviewPage() {
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-black px-12 py-12 text-white font-sans antialiased relative">
+    <div className="min-h-screen bg-black px-4 lg:px-12 pt-28 pb-10 lg:py-12 text-white font-sans antialiased relative">
       
-      {/* 1. LOGO - Wrapped in a relative container with high z-index */}
-      <div className="relative z-50 mb-20"> 
+      {/* LOGO: Centered on mobile, left-aligned on laptop */}
+      <div className="relative z-50 mb-8 lg:mb-20 flex justify-center lg:justify-start"> 
         <Logo />
       </div>
 
-      {/* 2. MAIN LAYOUT - Your original flex layout */}
-      <div className="flex gap-14 relative z-10">
-        
-        {/* SIDEBAR */}
+      {/* MAIN LAYOUT: Stacked on mobile, reverts to flex-row gap-14 on laptop */}
+      <div className="flex flex-col lg:flex-row gap-10 lg:gap-14 relative z-10">
         <motion.aside 
-          initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
-          animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-          transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
-          className="w-72 flex-shrink-0"
+          initial={{ opacity: 0, x: -100 }} 
+          animate={{ opacity: 1, x: 0 }}    
+          transition={{ duration: 0.6, ease: "easeOut" }} 
+          className="w-full max-w-[380px] mx-auto lg:max-w-none lg:mx-0 lg:w-72 flex-shrink-0"
         >
           <FlashcardOverviewSidebar stats={stats} />
         </motion.aside>
 
         {/* MAIN CONTENT AREA */}
-        <main className="flex-1">
+        <main className="flex-1 flex flex-col items-center lg:items-stretch">
           
-          {/* ACTION BUTTON ROW */}
-          {/* --- WRAPPED IN MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION --- */}
           <motion.div 
-            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: 100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
+            className="w-full"
           >
-            <div className="flex justify-end mb-8">
+            {/* ACTION BUTTON: Centered on mobile, aligned right on laptop */}
+            <div className="flex justify-center lg:justify-end mb-8 lg:mb-8 w-full">
               <button 
                 onClick={() => setIsAddModalOpen(true)}
-                className="flex items-center gap-2 bg-white text-black text-[13px] font-bold px-7 py-3 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all uppercase tracking-wider"
+                className="w-full max-w-[380px] sm:w-auto flex justify-center items-center gap-2 bg-white text-black text-[13px] font-bold px-7 py-3.5 lg:py-3 rounded-full shadow-[0_0_30px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-all uppercase tracking-wider"
               >
                 <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round">
                   <line x1="12" y1="5" x2="12" y2="19"></line>
@@ -57,30 +56,34 @@ export function FlashcardsOverviewPage() {
               </button>
             </div>
 
-            {/* HEADER & SEARCH ROW */}
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-16">
-              <div>
-                <h1 className="text-[44px] font-semibold tracking-tight mb-3">
-                  <span className="text-[#00CEC8]">My Deck</span> <span className="mx-2 opacity-80">🔥</span> <span className="text-[#FF4500]">13</span>
+            {/* HEADER & SEARCH: Stacked and centered on mobile, exactly as original on laptop */}
+            <div className="flex flex-col lg:flex-row lg:items-end justify-between items-center gap-6 mb-10 lg:mb-16 text-center lg:text-left">
+              
+              <div className="flex flex-col items-center lg:items-start">
+                <h1 className="text-4xl lg:text-[44px] font-semibold tracking-tight mb-3 flex items-center justify-center lg:justify-start">
+                  <span className="text-[#00CEC8]">My Deck</span> 
+                  <span className="mx-2 opacity-80 text-3xl lg:text-4xl">🔥</span> 
+                  <span className="text-[#FF4500]">13</span>
                 </h1>
-                <p className="text-xl text-white/40 font-medium max-w-lg">
+                <p className="text-sm lg:text-xl text-white/40 font-medium max-w-[280px] lg:max-w-lg leading-relaxed">
                   Keep your daily reviews active to maintain your streak!
                 </p>
               </div>
 
-              <div className="w-full md:w-[350px]">
+              {/* SEARCH: Centered compact max-width on mobile, exactly 350px on laptop */}
+              <div className="w-full max-w-[350px] lg:max-w-none lg:w-[350px]">
                 <SearchBar value={search} onChange={setSearch} />
               </div>
+
             </div>
           </motion.div>
 
-          {/* DECKS GRID */}
-          {/* --- CONVERTED TO MOTION.DIV WITH SLIDE-UP FROM BOTTOM ANIMATION --- */}
+          {/* DECKS GRID: Centered column on mobile, original grid on laptop */}
           <motion.div 
-            initial={{ opacity: 0, y: 50 }} // Starts invisible and 50px below
-            animate={{ opacity: 1, y: 0 }}    // Slides up into its original position (0)
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
-            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            initial={{ opacity: 0, y: 50 }} 
+            animate={{ opacity: 1, y: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 lg:gap-8 w-full max-w-[380px] sm:max-w-none mx-auto lg:mx-0"
           >
               {filteredDecks.map((deck) => (
                 <DeckCard

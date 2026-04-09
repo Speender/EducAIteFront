@@ -40,20 +40,20 @@ export function AddDeckModal({ onClose, onSubmit }: AddDeckModalProps) {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-        className="w-full max-w-[480px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
+        className="w-full max-w-[480px] rounded-[24px] lg:rounded-[32px] bg-[#050505] p-6 lg:p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
       >
 
         {/* Close Button */}
-        <button onClick={onClose} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <button onClick={onClose} className="absolute top-5 right-5 lg:top-8 lg:right-8 text-white/40 hover:text-white transition-colors">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="w-5 h-5 lg:w-6 lg:h-6">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
 
-        <h2 className="text-3xl font-bold text-white mb-8">Add deck</h2>
+        <h2 className="text-2xl lg:text-3xl font-bold text-white mb-6 lg:mb-8">Add deck</h2>
 
-        <div className="space-y-6">
+        <div className="space-y-5 lg:space-y-6">
           <div>
             <label className="block text-sm font-bold text-white/70 mb-2">Deck name</label>
             <input
@@ -61,19 +61,19 @@ export function AddDeckModal({ onClose, onSubmit }: AddDeckModalProps) {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               placeholder="e.g. Database Management System"
-              className="w-full bg-black rounded-full border border-white/30 px-4 py-3 text-lg outline-none placeholder:text-white/20 text-white focus:border-[#00CEC8] transition-colors"
+              className="w-full bg-black rounded-full border border-white/30 px-4 py-2.5 lg:py-3 text-base lg:text-lg outline-none placeholder:text-white/20 text-white focus:border-[#00CEC8] transition-colors"
               autoFocus
             />
           </div>
 
           <div>
-            <p className="mb-4 text-sm font-bold text-white/70">Choose a color</p>
-            <div className="flex flex-wrap gap-4">
+            <p className="mb-3 lg:mb-4 text-sm font-bold text-white/70">Choose a color</p>
+            <div className="flex flex-wrap gap-3 lg:gap-4">
               {colors.map((item) => (
                 <button
                   key={item}
                   onClick={() => setColor(item)}
-                  className={`h-10 w-10 rounded-full transition-all ${
+                  className={`h-8 w-8 lg:h-10 lg:w-10 rounded-full transition-all ${
                     color === item 
                       ? 'scale-110 border-4 border-white' 
                       : 'border border-white/20 hover:scale-110'
@@ -84,10 +84,10 @@ export function AddDeckModal({ onClose, onSubmit }: AddDeckModalProps) {
             </div>
           </div>
 
-          <div className="text-white/40 text-center text-sm font-bold my-4">or</div>
+          <div className="text-white/40 text-center text-xs lg:text-sm font-bold my-3 lg:my-4">or</div>
 
           <div>
-            <p className="mb-4 text-sm font-bold text-white/70">Choose a picture</p>
+            <p className="mb-3 lg:mb-4 text-sm font-bold text-white/70">Choose a picture</p>
             <input
               type="file"
               ref={fileInputRef}
@@ -99,19 +99,19 @@ export function AddDeckModal({ onClose, onSubmit }: AddDeckModalProps) {
               <button
                 type="button"
                 onClick={triggerFileSelectPopup}
-                className="h-20 w-20 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden"
+                className="h-16 w-16 lg:h-20 lg:w-20 rounded-full border-2 border-dashed border-white/20 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden shrink-0"
               >
                 {picture ? (
                   <img src={URL.createObjectURL(picture)} alt="preview" className="w-full h-full object-cover" />
                 ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white">
+                  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-white w-5 h-5 lg:w-6 lg:h-6">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
                 )}
               </button>
               {picture && (
-                <span className="text-sm text-white/70 truncate max-w-[200px]">{picture.name}</span>
+                <span className="text-sm text-white/70 truncate max-w-[180px] lg:max-w-[200px]">{picture.name}</span>
               )}
             </div>
           </div>
@@ -123,7 +123,7 @@ export function AddDeckModal({ onClose, onSubmit }: AddDeckModalProps) {
                 onClose();
               }
             }}
-            className={`w-full rounded-full py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] ${
+            className={`w-full rounded-full py-3 lg:py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] ${
               !title.trim() ? 'cursor-not-allowed opacity-50' : ''
             }`}
           >

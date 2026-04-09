@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion';
 
 interface Event {
     date: string;
@@ -47,11 +47,10 @@ const Search = ({ events, onResultClick }: Props) => {
     };
 
     return (
-        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM RIGHT ANIMATION ---
         <motion.div 
-            initial={{ opacity: 0, x: 100 }} // Starts invisible and 100px to the right
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: 100 }} 
+            animate={{ opacity: 1, x: 0 }}  
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative" 
             ref={dropdownRef}
         >

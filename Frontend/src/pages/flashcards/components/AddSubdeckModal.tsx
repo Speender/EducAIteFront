@@ -1,5 +1,5 @@
 import React, { useState, useRef } from 'react';
-import { motion } from 'framer-motion'; // Ensure framer-motion is installed
+import { motion } from 'framer-motion';
 
 interface AddSubdeckModalProps {
   onClose: () => void;
@@ -41,51 +41,52 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 20 }}
         transition={{ type: "spring", duration: 0.5, bounce: 0.3 }}
-        className="w-full max-w-[480px] rounded-[32px] bg-[#050505] p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
+        className="w-full max-w-[480px] rounded-[24px] lg:rounded-[32px] bg-[#050505] p-6 lg:p-10 border border-white/10 shadow-[0_0_80px_rgba(0,0,0,0.8)] relative"
       >
 
         {/* Close Button */}
-        <button onClick={onClose} className="absolute top-8 right-8 text-white/40 hover:text-white transition-colors">
-          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+        <button onClick={onClose} className="absolute top-6 right-6 lg:top-8 lg:right-8 text-white/40 hover:text-white transition-colors z-30">
+          <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <line x1="18" y1="6" x2="6" y2="18"></line>
             <line x1="6" y1="6" x2="18" y2="18"></line>
           </svg>
         </button>
 
-        {/* Header & Parent Deck Pill */}
-        <div className="text-center mb-10">
-          <h2 className="text-[26px] font-bold text-white mb-3">Add subdeck</h2>
+        {/* Header */}
+        <div className="text-center mb-6 lg:mb-10">
+          <h2 className="text-[22px] lg:text-[26px] font-bold text-white mb-2 lg:mb-3">Add subdeck</h2>
           {parentDeckName && (
-            <div className="inline-flex items-center justify-center border border-white/20 rounded-full px-5 py-1.5 text-[11px] font-medium text-white/80 tracking-wide">
+            <div className="inline-flex items-center justify-center border border-white/20 rounded-full px-4 lg:px-5 py-1 lg:py-1.5 text-[10px] lg:text-[11px] font-medium text-white/80 tracking-wide">
               {parentDeckName}
             </div>
           )}
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-4 lg:space-y-6">
           {/* Subdeck Name Input */}
           <div>
-            <label className="block text-sm font-medium text-white/90 mb-2">Deck name</label>
+            <label className="block text-xs lg:text-sm font-medium text-white/90 mb-2">Deck name</label>
             <input
               id="deck-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              className="w-full bg-transparent rounded-full border border-white/30 px-5 py-3 text-base outline-none focus:border-[#00CEC8] transition-colors text-white"
+              placeholder="e.g. Normalization"
+              className="w-full bg-transparent rounded-full border border-white/30 px-5 py-2.5 lg:py-3 text-sm lg:text-base outline-none focus:border-[#00CEC8] transition-colors text-white"
               autoFocus
             />
           </div>
 
           {/* Color Picker */}
           <div>
-            <p className="mb-4 text-sm font-medium text-white/90">Choose a color</p>
-            <div className="flex flex-wrap gap-4">
+            <p className="mb-3 lg:mb-4 text-xs lg:text-sm font-medium text-white/90">Choose a color</p>
+            <div className="flex flex-wrap gap-3 lg:gap-4">
               {colors.map((item) => (
                 <button
                   key={item}
                   onClick={() => setColor(item)}
-                  className={`h-10 w-10 rounded-full transition-all ${
+                  className={`h-8 w-8 lg:h-10 lg:w-10 rounded-full transition-all ${
                     color === item 
-                      ? 'scale-110 border-4 border-white' 
+                      ? 'scale-110 border-[3px] lg:border-4 border-white' 
                       : 'border border-white/20 hover:scale-110'
                   }`}
                   style={{ backgroundColor: item }}
@@ -94,11 +95,11 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
             </div>
           </div>
 
-          <div className="text-white/40 text-center text-sm font-medium my-4">or</div>
+          <div className="text-white/40 text-center text-xs font-medium my-2 lg:my-4">or</div>
 
           {/* Picture Picker */}
           <div>
-            <p className="mb-4 text-sm font-medium text-white/90">Choose a picture</p>
+            <p className="mb-3 lg:mb-4 text-xs lg:text-sm font-medium text-white/90">Choose a picture</p>
             <input
               type="file"
               ref={fileInputRef}
@@ -110,19 +111,19 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
               <button
                 type="button"
                 onClick={triggerFileSelectPopup}
-                className="h-16 w-16 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden"
+                className="h-14 w-14 lg:h-16 lg:w-16 rounded-full border border-white/30 flex items-center justify-center hover:bg-white/10 transition-colors cursor-pointer group overflow-hidden shrink-0"
               >
                 {picture ? (
                   <img src={URL.createObjectURL(picture)} alt="preview" className="w-full h-full object-cover" />
                 ) : (
-                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round" className="text-white/70">
                     <line x1="12" y1="5" x2="12" y2="19"></line>
                     <line x1="5" y1="12" x2="19" y2="12"></line>
                   </svg>
                 )}
               </button>
               {picture && (
-                <span className="text-sm text-white/70 truncate max-w-[200px]">{picture.name}</span>
+                <span className="text-xs text-white/70 truncate max-w-[150px] lg:max-w-[200px]">{picture.name}</span>
               )}
             </div>
           </div>
@@ -135,11 +136,11 @@ export function AddSubdeckModal({ onClose, onSubmit, parentDeckName = "Database 
                 onClose(); 
               }
             }}
-            className={`w-full rounded-full py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-4 ${
+            className={`w-full rounded-full py-3 lg:py-4 font-bold text-sm transition-all bg-white text-black hover:scale-[1.02] active:scale-[0.98] shadow-[0_0_20px_rgba(255,255,255,0.2)] mt-2 lg:mt-4 ${
               !title.trim() ? 'cursor-not-allowed opacity-50' : ''
             }`}
           >
-            Add deck
+            Add subdeck
           </button>
         </div>
       </motion.div>

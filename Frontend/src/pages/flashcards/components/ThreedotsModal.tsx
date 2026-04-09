@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion'; // <-- Import Framer Motion
+import { motion, AnimatePresence } from 'framer-motion';
 
 interface ThreedotsModalProps {
   children?: React.ReactNode;
@@ -23,7 +23,7 @@ const ThreedotsModal: React.FC<ThreedotsModalProps> = ({ children }) => {
     <div className="relative inline-block text-left" ref={menuRef}>
       <button
         onClick={(e) => {
-          e.stopPropagation(); // Prevents triggering parent card events
+          e.stopPropagation(); 
           setIsOpen(!isOpen);
         }}
         className="text-white/30 hover:text-white transition-colors p-2 rounded-full hover:bg-white/10"

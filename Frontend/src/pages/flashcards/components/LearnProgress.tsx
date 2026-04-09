@@ -6,7 +6,6 @@ interface LearnProgressProps {
 }
 
 export function LearnProgress({ current, total }: LearnProgressProps) {
-  // Calculate the percentage to animate the progress bar
   const progressPercentage = Math.round((current / total) * 100);
 
   return (

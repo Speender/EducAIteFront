@@ -4,26 +4,26 @@ import SettingsHeader from './components/SettingsHeader';
 import ProfileForm from './components/ProfileForm';
 import SchoolSecurityForm from './components/SchoolSecurityForm';
 import Logo from '../../components/Logo';
- 
 
 const SettingsPage: React.FC = () => {
   return (
-    // PURE BLACK BACKGROUND - No Earth background, noBlur effect
-    <div className="min-h-screen bg-black text-white font-sans relative overflow-x-hidden antialiased pb-20">
+    <div className="min-h-screen bg-black text-white font-sans relative overflow-x-hidden antialiased pb-16 md:pb-20 lg:pb-24">
       <Logo />
-      {/* 2. Main Content Wrapper */}
-      <main className="max-w-[1280px] mx-auto px-6 pt-32 pb-24 relative z-10 flex flex-col items-center">
+      
+      <main className="w-full max-w-[1280px] mx-auto px-4 md:px-8 lg:px-12 pt-36 lg:pt-32 pb-16 md:pb-24 relative z-10 flex flex-col items-center">
         
         {/* Header (Title, Tabs) */}
-        <SettingsHeader />
+        <div className="w-full mb-8 md:mb-12">
+          <SettingsHeader />
+        </div>
 
         {/* Forms Sections */}
-        <ProfileForm />
-        <SchoolSecurityForm />
+        <div className="w-full flex flex-col gap-10 md:gap-16">
+          <ProfileForm />
+          <SchoolSecurityForm />
+        </div>
 
-        {/* 3. Floating Robot Avatar (Reuse) */}
       </main>
-
     </div>
   );
 };

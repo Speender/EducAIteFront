@@ -1,7 +1,6 @@
 import React from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion'; 
 
-// Reusable Input Field
 const InputField: React.FC<{ label: string; placeholder: string; type?: string }> = 
 ({ label, placeholder, type = 'text' }) => (
   <div className="w-full">
@@ -18,29 +17,28 @@ const InputField: React.FC<{ label: string; placeholder: string; type?: string }
 
 const SchoolSecurityForm: React.FC = () => {
   return (
-    // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN FROM LEFT ANIMATION ---
     <motion.div 
-      initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
-      animate={{ opacity: 1, x: 0 }}    // Slides into its original position (0)
-      transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+      initial={{ opacity: 0, x: -100 }} 
+      animate={{ opacity: 1, x: 0 }}    
+      transition={{ duration: 0.6, ease: "easeOut" }} 
       className="w-full relative z-10"
     >
       
       {/* --- SCHOOL SECTION --- */}
-      <div className="border-t-[1.5px] border-white/10 pt-10 pb-12 mb-10 flex flex-col md:flex-row gap-10">
+      <div className="border-t-[1.5px] border-white/10 pt-8 md:pt-10 pb-10 md:pb-12 mb-8 md:mb-10 flex flex-col md:flex-row gap-6 md:gap-10">
         
         {/* Title and Description */}
-        <div className="md:w-1/4">
-          <h2 className="text-2xl font-bold text-white mb-2.5 tracking-tight">
+        <div className="md:w-1/4 mb-2 md:mb-0">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-1.5 md:mb-2.5 tracking-tight">
             School
           </h2>
-          <p className="text-sm text-white/50 leading-relaxed max-w-xs">
+          <p className="text-xs md:text-sm text-white/50 leading-relaxed max-w-xs">
             Set your school details
           </p>
         </div>
 
         {/* --- FORM FIELDS GRID --- */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8">
             <InputField label="School" placeholder="" />
             <InputField label="Department" placeholder="" />
             <InputField label="Course" placeholder="" />
@@ -49,27 +47,26 @@ const SchoolSecurityForm: React.FC = () => {
       </div>
 
       {/* --- SEPARATOR LINE --- */}
-      <div className="w-full border-t border-white/10 mb-10"></div>
+      <div className="w-full border-t border-white/10 mb-8 md:mb-10"></div>
 
       {/* --- LOGIN AND SECURITY SECTION --- */}
-      <div className="flex flex-col md:flex-row gap-10">
+      <div className="flex flex-col md:flex-row gap-6 md:gap-10 pb-10">
         
         {/* Title and Description */}
-        <div className="md:w-1/4">
-          <h2 className="text-2xl font-bold text-white mb-2.5 tracking-tight">
+        <div className="md:w-1/4 mb-2 md:mb-0">
+          <h2 className="text-xl md:text-2xl font-bold text-white mb-1.5 md:mb-2.5 tracking-tight">
             Login and Security
           </h2>
-          <p className="text-sm text-white/50 leading-relaxed max-w-xs">
+          <p className="text-xs md:text-sm text-white/50 leading-relaxed max-w-xs">
             Update your account security details
           </p>
         </div>
 
         {/* --- FORM FIELDS GRID --- */}
-        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-8 items-end">
+        <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 items-end">
             <InputField label="Username" placeholder="" />
             
-            {/* --- FIXED: NORMAL SIZED WHITE BUTTON WITH LABEL --- */}
-            <div className="w-full flex flex-col justify-end">
+            <div className="w-full flex flex-col justify-end mt-2 md:mt-0">
                 <label className="text-sm text-white/70 mb-2 block font-medium">
                   Password
                 </label>

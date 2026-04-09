@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion'; 
 
 interface Props {
     onClick: () => void
@@ -7,11 +7,10 @@ interface Props {
 
 const AddEvent = ({onClick}: Props) => {
     return (
-        // --- WRAPPER: Handles the slide-in animation without breaking Tailwind hovers ---
         <motion.div
-            initial={{ opacity: 0, x: 50 }} // Starts invisible and 50px to the right
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}  
+            transition={{ duration: 0.6, ease: "easeOut" }}
         >
             <button
                 className="bg-white text-black font-bold text-sm px-6 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.15)] hover:scale-105 active:scale-95 transition-transform"

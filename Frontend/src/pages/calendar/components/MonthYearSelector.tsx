@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion'; 
 
 const months = [
     'January', 'February', 'March', 'April', 'May', 'June',
@@ -24,11 +24,10 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
     };
 
     return (
-        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN ANIMATION ---
         <motion.div 
-            initial={{ opacity: 0, x: -50 }} // Starts invisible and 50px to the left
-            animate={{ opacity: 1, x: 0 }}    // Slides into its original position
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
+            initial={{ opacity: 0, x: -50 }}
+            animate={{ opacity: 1, x: 0 }}  
+            transition={{ duration: 0.6, ease: "easeOut" }}
             className="relative inline-flex items-center group cursor-pointer mb-2"
         >
             
@@ -47,14 +46,11 @@ const MonthYearSelector = ({ month, year, onDateChange }: Props) => {
                 type="month"
                 value={inputValue}
                 onChange={handleChange}
-                // THIS IS THE FIX: Forces the calendar to pop up when clicking anywhere on the element
-                //todo: fix for firefox/safari
                 onClick={(e) => {
                     if ('showPicker' in HTMLInputElement.prototype) {
                         try {
                             e.currentTarget.showPicker();
                         } catch (err) {
-                            // Fallback for very old browsers
                         }
                     }
                 }}

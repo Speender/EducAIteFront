@@ -1,5 +1,5 @@
 import React from 'react';
-import { motion } from 'framer-motion'; // <-- IMPORT FRAMER MOTION
+import { motion } from 'framer-motion';
 
 interface Props {
     name: string,
@@ -8,18 +8,17 @@ interface Props {
 
 const Header = ({ name, semester }: Props) => {
     return (
-        // --- CONVERTED TO MOTION.DIV WITH SLIDE-IN ANIMATION ---
         <motion.div 
-            initial={{ opacity: 0, x: -100 }} // Starts invisible and 100px to the left
-            animate={{ opacity: 1, x: 0 }}    // Slides smoothly into its original position
-            transition={{ duration: 0.6, ease: "easeOut" }} // Smooth 0.6s slide
-            className="flex flex-col min-w-0"
+            initial={{ opacity: 0, x: -100 }} 
+            animate={{ opacity: 1, x: 0 }}    
+            transition={{ duration: 0.6, ease: "easeOut" }} 
+            className="flex flex-col min-w-0 items-center lg:items-start text-center lg:text-left w-full"
         >
-            <h1 className="text-4xl md:text-[2.75rem] font-bold tracking-tight text-white mb-2">
+            <h1 className="text-3xl lg:text-[2.75rem] font-bold tracking-tight text-white mb-1 lg:mb-2">
                 Hey, <span className="text-[#00CEC8]">{name}</span> 👋
             </h1>
-            <h2 className="text-white/50 text-lg font-medium">
-                Here's your current grade in <span className="text-white font-semibold">{semester}</span>
+            <h2 className="text-white/50 text-sm lg:text-lg font-medium">
+                Here's your current grade in <span className="text-white font-semibold block sm:inline mt-1 sm:mt-0">{semester}</span>
             </h2>
         </motion.div>
     )
