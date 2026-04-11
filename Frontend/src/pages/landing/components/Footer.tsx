@@ -33,7 +33,7 @@ const Footer = () => {
     <footer 
       id="contact" 
       ref={footerRef}
-      className="w-full bg-black text-white px-6 md:px-[10vw] py-16 md:py-24 relative overflow-hidden antialiased"
+      className="w-full bg-black text-white px-6 md:px-[10vw] py-10 md:py-14 relative overflow-hidden antialiased"
     >
       
       <motion.div style={{ x: xParallax }} className="w-full">
@@ -67,11 +67,11 @@ const Footer = () => {
           </p>
         </div>
 
-        <div className="w-full h-px bg-white/10 mb-16" />
+        <div className="w-full h-px bg-white/10 mb-10" />
 
         {/* --- LINKS & SOCIALS --- */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-12 text-sm">
-          <div className="col-span-2 md:col-span-1 flex flex-col gap-6">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-sm">
+          <div className="col-span-2 md:col-span-1 flex flex-col gap-4">
             <div className="text-2xl font-bold">
               educ<span className="text-[#00CEC8]">AI</span>te
             </div>
@@ -98,7 +98,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="mt-20 text-center text-white/10 text-[10px] tracking-widest uppercase">
+        <div className="mt-10 text-center text-white/10 text-[10px] tracking-widest uppercase">
           © 2026 educAIte. All rights reserved.
         </div>
       </motion.div>

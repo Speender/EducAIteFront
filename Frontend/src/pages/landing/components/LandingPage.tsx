@@ -61,7 +61,7 @@ const LandingPageContent = () => {
         <motion.div 
           initial={{ opacity: 0, y: 100 }} 
           animate={{ opacity: 1, y: 0 }} 
-          transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 0.7, ease: "easeOut" }}
           style={{ y: robotY }}
           className="absolute bottom-[15vh] md:bottom-[18vh] left-1/2 -translate-x-1/2 w-[280px] sm:w-[350px] md:w-[420px] z-20"
         >
@@ -76,7 +76,7 @@ const LandingPageContent = () => {
         <motion.div 
           initial={{ opacity: 0 }} 
           animate={{ opacity: 1 }} 
-          transition={{ duration: 1.5 }}
+          transition={{ duration: 1 }}
           style={{ y: earthY, backgroundImage: `url(${EarthImage})` }}
           className="absolute bottom-0 left-0 w-full h-[40vh] sm:h-[50vh] md:h-[55vh] bg-cover bg-[center_top] z-30"
         />
