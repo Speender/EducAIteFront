@@ -1,55 +1,104 @@
-import React from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom';
 
 interface CourseCardProps {
-  id: string;
-  title: string;
-  mastery: number;
-  color: string;
+  studentCourseSqid: string;
+  edpCode: string;
+  courseName: string;
+  units: number;
+  overallPerformanceScore: number | null;
 }
 
-const CourseCard = ({ id, title, mastery, color }: CourseCardProps) => {
+function getProgressTone(score: number | null) {
+  if (score === null) {
+    return {
+      badge: 'bg-white/10 text-white/80',
+      bar: 'bg-white/30',
+      label: 'No progress yet',
+      width: 18,
+    };
+  }
+
+  if (score >= 80) {
+    return {
+      badge: 'bg-[#00CEC8]/20 text-[#7df8f3]',
+      bar: 'bg-[#00CEC8]',
+      label: 'Strong momentum',
+      width: score,
+    };
+  }
+
+  if (score >= 60) {
+    return {
+      badge: 'bg-[#4A6792]/30 text-[#b4c9ee]',
+      bar: 'bg-[#4A6792]',
+      label: 'Steady progress',
+      width: score,
+    };
+  }
+
+  return {
+    badge: 'bg-amber-500/15 text-amber-200',
+    bar: 'bg-amber-400',
+    label: 'Needs reinforcement',
+    width: Math.max(score, 12),
+  };
+}
+
+const CourseCard = ({
+  studentCourseSqid,
+  edpCode,
+  courseName,
+  units,
+  overallPerformanceScore,
+}: CourseCardProps) => {
   const navigate = useNavigate();
+  const progressTone = getProgressTone(overallPerformanceScore);
 
   return (
-    <div 
-      onClick={() => navigate(`/courses/${id}`)} // Navigates to the specific course ID
-      className="min-w-[320px] max-w-[320px] bg-[#050505] border border-white/20 rounded-[32px] p-6 select-none relative transition-all duration-300 hover:border-[#00CEC8]/100 shadow-[0_35px_40px_-15px_rgba(255,255,255,0.15)] flex flex-col h-[480px] cursor-pointer group"
+    <div
+      onClick={() => navigate(`/courses/${studentCourseSqid}`)}
+      className="group relative flex h-[480px] min-w-[340px] max-w-[340px] cursor-pointer select-none flex-col rounded-[32px] border border-white/20 bg-[#050505] p-6 shadow-[0_35px_40px_-15px_rgba(255,255,255,0.15)] transition-all duration-300 hover:border-[#00CEC8]/100"
     >
-      {/* Top Section */}
-      <div className="flex justify-between items-start mb-6">
-        <span className={`${color} text-black text-[11px] font-bold px-4 py-1.5 rounded-full`}>
-          {id}
+      <div className="mb-6 flex items-start justify-between gap-4">
+        <span className={`rounded-full px-4 py-1.5 text-[11px] font-bold ${progressTone.badge}`}>
+          {edpCode}
         </span>
-        <button className="text-white/50 group-hover:text-[#00CEC8] transition-colors">
+        <button className="text-white/50 transition-colors group-hover:text-[#00CEC8]">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <path d="M15 3h6v6M10 14L21 3M18 13v6a2 2 0 01-2 2H5a2 2 0 01-2-2V8a2 2 0 012-2h6" />
           </svg>
         </button>
       </div>
 
-      {/* Title */}
-      <h3 className="text-white text-3xl font-bold leading-tight mb-8">
-        {title}
-      </h3>
-
-      {/* Progress Bar */}
-      <div className="space-y-2 mb-6">
-        <p className="text-white text-[11px] font-semibold tracking-wide">
-          Mastery: <span className="font-bold">{mastery}%</span>
-        </p>
-        <div className="h-3 w-full bg-white/20 rounded-full overflow-hidden flex">
-          <div 
-            className="h-full bg-[#64748b] rounded-full transition-all duration-500" 
-            style={{ width: `${mastery}%` }}
-          />
-        </div>
+      <div className="space-y-4">
+        <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">Course</p>
+        <h3 className="line-clamp-3 min-h-[7.5rem] text-3xl font-bold leading-tight text-white">
+          {courseName}
+        </h3>
       </div>
 
-      {/* Bottom Area */}
-      <div className="flex-1 mt-2 bg-white/5 rounded-[24px] border border-white/5 group-hover:bg-white/10 transition-all" />
-    </div>
-  )
-}
+      <div className="mb-8 mt-10 rounded-[24px] border border-white/10 bg-white/[0.04] p-5">
+        <div className="mb-4 flex items-center justify-between">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-white/45">Units</p>
+          <p className="text-lg font-bold text-white">{units.toFixed(1)}</p>
+        </div>
 
-export default CourseCard
+        <div className="space-y-2">
+          <div className="flex items-center justify-between text-[11px] font-semibold uppercase tracking-[0.2em] text-white/50">
+            <span>Progress</span>
+            <span>{overallPerformanceScore === null ? '--' : `${overallPerformanceScore.toFixed(0)}%`}</span>
+          </div>
+          <div className="h-3 w-full overflow-hidden rounded-full bg-white/10">
+            <div
+              className={`h-full rounded-full transition-all duration-500 ${progressTone.bar}`}
+              style={{ width: `${progressTone.width}%` }}
+            />
+          </div>
+          <p className="pt-2 text-sm text-white/65">{progressTone.label}</p>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+export default CourseCard;

@@ -1,4 +1,4 @@
-import React, { useState, type ChangeEvent } from 'react';
+import { useState } from 'react';
 
 interface Props {
     isOpen: boolean;

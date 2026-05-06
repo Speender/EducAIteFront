@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import robotIcon from '../../../assets/robot.svg';
 
 interface CertificateResumeBuilderProps {

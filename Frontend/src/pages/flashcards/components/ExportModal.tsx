@@ -1,4 +1,3 @@
-import React from 'react';
 import pdfIcon from '../../../assets/pdf-logo.svg'; 
 import wordIcon from '../../../assets/word-logo.svg';
 

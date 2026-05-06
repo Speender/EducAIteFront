@@ -1,27 +1,45 @@
-import React from 'react';
+import { motion } from 'motion/react';
+
+import RobotImage from '../../assets/robot.svg';
+import EarthImage from '../../assets/earthbg.svg';
 import LandingPageNavbar from '../../components/LandingPageNavbar';
-import LandingPageContent from './components/LandingPage';
-import FeatureCarousel from './components/FeatureCarousel'; 
 import Developers from './components/Developers';
+import FeatureCarousel from './components/FeatureCarousel';
 import Footer from './components/Footer';
+import LandingPageContent from './components/LandingPage';
+import { useImagePreload } from './hooks/useImagePreload';
 
 const LandingPage = () => {
-  return (
-    // 2. Changed h-screen (fixed) to min-h-screen (grows), and locked overflow-x only
-    <div className="min-h-screen w-full bg-black text-white font-sans overflow-x-hidden relative antialiased">
-      
-      {/* The Navigation Bar stays fixed at the top */}
-      <LandingPageNavbar />
+  const heroAssets = useImagePreload([RobotImage, EarthImage]);
 
-      {/* --- SECTION 1: LANDING CONTENT --- */}
-      <div className="relative w-full h-screen overflow-hidden">
+  if (heroAssets.isLoading && !heroAssets.hasError) {
+    return (
+      <div className="relative flex min-h-screen w-full items-center justify-center overflow-x-hidden bg-black font-sans text-white antialiased">
+        <motion.div
+          initial={{ opacity: 0, y: 14 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="flex flex-col items-center gap-6 rounded-[32px] border border-white/10 bg-[#050505] px-10 py-12 shadow-[0_24px_80px_rgba(0,0,0,0.55)]"
+        >
+          <div className="h-14 w-14 animate-spin rounded-full border-2 border-white/15 border-t-[#00CEC8]" />
+          <div className="space-y-2 text-center">
+            <h1 className="text-2xl font-bold tracking-tight">
+              Preparing educ<span className="text-[#00CEC8]">AI</span>te
+            </h1>
+            <p className="text-sm text-white/60">Loading the launch experience and hero scene.</p>
+          </div>
+        </motion.div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="relative min-h-screen w-full overflow-x-hidden bg-black font-sans text-white antialiased">
+      <LandingPageNavbar />
+      <div id="home" className="relative h-screen w-full overflow-hidden">
         <LandingPageContent />
       </div>
-      {/* --- SECTION 2: CAROUSEL --- */}
       <FeatureCarousel />
-      {/* --- SECTION 3: Developers --- */}
       <Developers />
-      {/* --- SECTION 4: Footer --- */}
       <Footer />
     </div>
   );

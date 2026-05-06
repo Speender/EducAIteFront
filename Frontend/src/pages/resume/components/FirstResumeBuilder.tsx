@@ -1,12 +1,10 @@
-import React from 'react'
 import robotIcon from '../../../assets/robot.svg';
 
 interface FirstResumeBuilderProps {
-  onBack: () => void;
   onNext: () => void; 
 }
 
-const FirstResumeBuilder = ({ onBack, onNext }: FirstResumeBuilderProps) => {
+const FirstResumeBuilder = ({ onNext }: FirstResumeBuilderProps) => {
   return (
     <div className="min-h-screen bg-black text-white pt-24 pb-10 px-8 lg:px-16 font-sans overflow-x-hidden">
       

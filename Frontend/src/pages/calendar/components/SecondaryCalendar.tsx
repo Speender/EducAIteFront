@@ -1,5 +1,4 @@
-import React, { useEffect, useState, type JSX } from 'react';
-import MonthYearSelector from './MonthYearSelector';
+import { useEffect, useState, type JSX } from 'react';
 
 interface Props {
     month: number;
@@ -14,12 +13,6 @@ const SecondaryCalendar = ({ month, year, day, onDateChange }: Props) => {
     useEffect(() => {
         setDate(new Date(year, month, 1));
     }, [month, year, day]);
-
-    const handleDateChange = (newMonth: number, newYear: number) => {
-        const newDate = new Date(newYear, newMonth, 1);
-        setDate(newDate);
-        onDateChange(newDate.getMonth(), newDate.getFullYear());
-    }
 
     const goToPreviousMonth = () => {
         const newDate = new Date(date.getFullYear(), date.getMonth() - 1, 1);

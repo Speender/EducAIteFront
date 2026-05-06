@@ -1,24 +1,30 @@
-import React from 'react';
-import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js';
-import { Bar } from 'react-chartjs-2';
+import type { ChartData, ChartOptions } from 'chart.js'
+import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Tooltip } from 'chart.js'
+import { Bar } from 'react-chartjs-2'
 
-ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip);
+import type { StudentAnalyticsDashboardResponseDto } from '@/features/student-performance/api/dto'
 
-const LearningTrendAnalysis = () => {
-  const chartData = {
-    labels: ['Week 1', 'Week 2', 'Week 3', 'Week 4', 'Week 5', 'Week 6'],
+ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
+
+interface LearningTrendAnalysisProps {
+  items: StudentAnalyticsDashboardResponseDto['learningTrendAnalysis']['items'];
+}
+
+const LearningTrendAnalysis = ({ items }: LearningTrendAnalysisProps) => {
+  const chartData: ChartData<'bar'> = {
+    labels: items.map((item) => item.courseName),
     datasets: [
       {
         label: 'Hours Studied',
-        data: [12, 19, 15, 22, 18, 25],
-        backgroundColor: '#00CEC8', // Brand cyan
-        borderRadius: 25, // Smooth rounded corners on bars
-        barThickness: 150,
-      }
-    ]
-  };
+        data: items.map((item) => item.studyTimeHours),
+        backgroundColor: '#00CEC8',
+        borderRadius: 25,
+        barThickness: 48,
+      },
+    ],
+  }
 
-  const chartOptions = {
+  const chartOptions: ChartOptions<'bar'> = {
     responsive: true,
     maintainAspectRatio: false,
     plugins: {
@@ -33,27 +39,35 @@ const LearningTrendAnalysis = () => {
     },
     scales: {
       x: {
-        grid: { display: false, drawBorder: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.5)' }
+        grid: { display: false },
+        ticks: { color: 'rgba(255, 255, 255, 0.5)' },
       },
       y: {
-        grid: { color: 'rgba(255, 255, 255, 0.05)', drawBorder: false },
-        ticks: { color: 'rgba(255, 255, 255, 0.5)' }
-      }
-    }
-  };
+        grid: { color: 'rgba(255, 255, 255, 0.05)' },
+        ticks: { color: 'rgba(255, 255, 255, 0.5)' },
+      },
+    },
+  }
 
   return (
-    <div className="w-full border border-white/20 rounded-[32px] p-8 bg-black mt-8">
+    <div className="mt-8 w-full rounded-[32px] border border-white/20 bg-black p-8">
       <div className="mb-8">
-        <h2 className="text-3xl font-bold mb-1">Learning <span className="text-[#00CEC8]">Trend Analysis</span></h2>
-        <p className="text-white/60 text-lg">Hours studied over the last 6 weeks</p>
+        <h2 className="mb-1 text-3xl font-bold">
+          Learning <span className="text-[#00CEC8]">Trend Analysis</span>
+        </h2>
+        <p className="text-lg text-white/60">Study time synced per course</p>
       </div>
-      <div className="h-[300px] w-full">
-        <Bar data={chartData} options={chartOptions} />
-      </div>
+      {items.length > 0 ? (
+        <div className="h-[300px] w-full">
+          <Bar data={chartData} options={chartOptions} />
+        </div>
+      ) : (
+        <div className="rounded-3xl border border-dashed border-white/15 bg-white/[0.03] p-10 text-white/60">
+          No study-time data has been synced yet.
+        </div>
+      )}
     </div>
-  );
-};
+  )
+}
 
-export default LearningTrendAnalysis;
+export default LearningTrendAnalysis

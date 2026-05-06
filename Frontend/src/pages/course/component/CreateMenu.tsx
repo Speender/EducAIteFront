@@ -4,7 +4,7 @@ import CreateFolder from '../modal/CreateFolder'
 
 interface CreateMenuProps {
   onClose: () => void;
-  onFolderCreated: (folderName: string) => void;
+  onFolderCreated: (folderName: string) => Promise<void> | void;
 }
 
 const CreateMenu: React.FC<CreateMenuProps> = ({ onClose, onFolderCreated }) => {
@@ -66,8 +66,10 @@ const CreateMenu: React.FC<CreateMenuProps> = ({ onClose, onFolderCreated }) => 
       <CreateFolder 
         isOpen={showFolderModal} 
         onClose={() => setShowFolderModal(false)}
-        onCreate={(folderName) => {
-          onFolderCreated(folderName); 
+        isSubmitting={false}
+        errorMessage={null}
+        onCreate={async (folderName) => {
+          await onFolderCreated(folderName); 
           setShowFolderModal(false); 
           onClose(); 
         }}

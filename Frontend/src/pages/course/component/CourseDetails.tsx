@@ -1,240 +1,819 @@
-import { useState, useEffect } from 'react'
-import { useNavigate, useParams } from 'react-router-dom'
-import { courses } from '../../../data/courses'
-import logo from '../../../assets/educAIte-logo.svg'
-import AImpatin from '../../../assets/robot.svg'
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { useLocation, useNavigate, useParams, useSearchParams } from 'react-router-dom';
 
-// Component Imports
-import ImportFileModal from './ImportFileModal'
-import CreateMenu from './CreateMenu'
-import FileActionMenu from './FileActionMenu'
+import logo from '../../../assets/educAIte-logo.svg';
+import AImpatin from '../../../assets/robot.svg';
+import { useToast } from '@/components/ToastProvider';
+import { useCurrentStudentQuery } from '@/features/auth/api/hooks';
+import {
+  useCreateFolderMutation,
+  useDeleteFolderMutation,
+  useFolderContentsQuery,
+  useFoldersQuery,
+  useFolderSearchQuery,
+  useUpdateFolderMutation,
+  useUploadFolderDocumentMutation,
+} from '@/features/folders/api/hooks';
+import type { FolderResponseDto } from '@/features/folders/api/dto';
+import { buildUniqueFolderKey } from '@/features/folders/lib/folderKey';
+import { useStudentCourseGroupsQuery } from '@/features/student-courses/api/hooks';
+import { getAuthSession } from '@/lib/api/auth';
+import { getErrorMessage } from '@/lib/api/errors';
+import { useDeleteDocumentMutation, useDocumentQuery, useUpdateDocumentMutation } from '@/features/documents/api/hooks';
+import { useDeleteNoteMutation, usePatchNoteMutation } from '@/features/notes/api/hooks';
+
+import EmptyFolderState from './EmptyFolderState';
+import ExplorerItemCard from './ExplorerItemCard';
+import ImportFileModal from './ImportFileModal';
+import CreateFolder from '../modal/CreateFolder';
+import RenameItemModal from './RenameItemModal';
+import DeleteItemModal from './DeleteItemModal';
+
+type DisplayItem = {
+  sqid: string;
+  name: string;
+  type: 'folder' | 'document' | 'note';
+  typeLabel: string;
+  createdAtLabel: string;
+  updatedAtLabel: string;
+  detailLabel?: string;
+  detailValue?: string;
+};
+
+type ActionTarget = {
+  sqid: string;
+  name: string;
+  type: 'folder' | 'document' | 'note';
+};
+
+function formatDateTimeLabel(date: Date) {
+  return date.toLocaleString('en-US', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  });
+}
+
+function buildBreadcrumbs(currentFolder: FolderResponseDto | null, folders: FolderResponseDto[]) {
+  if (!currentFolder) {
+    return [];
+  }
+
+  const folderBySqid = new Map(folders.map((folder) => [folder.sqid, folder]));
+  const chain: FolderResponseDto[] = [];
+  let pointer: FolderResponseDto | null = currentFolder;
+
+  while (pointer) {
+    chain.unshift(pointer);
+    pointer = pointer.parentFolderSqid ? folderBySqid.get(pointer.parentFolderSqid) ?? null : null;
+  }
+
+  return chain;
+}
 
 const CourseDetails = () => {
   const navigate = useNavigate();
+  const location = useLocation();
+  const { showSuccess } = useToast();
   const { id } = useParams();
-  
-  // Overlay States
+  const [searchParams, setSearchParams] = useSearchParams();
+  const session = getAuthSession();
+  const currentStudentQuery = useCurrentStudentQuery();
+  const studentSqid = currentStudentQuery.data?.sqid ?? session?.student.sqid ?? null;
+  const courseGroupsQuery = useStudentCourseGroupsQuery(studentSqid);
+  const foldersQuery = useFoldersQuery();
+  const createFolderMutation = useCreateFolderMutation();
+  const deleteFolderMutation = useDeleteFolderMutation();
+
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isCreateMenuOpen, setIsCreateMenuOpen] = useState(false);
-  
-  const [activeMenuFile, setActiveMenuFile] = useState<string | null>(null);
+  const [isCreateFolderModalOpen, setIsCreateFolderModalOpen] = useState(false);
+  const [renameTarget, setRenameTarget] = useState<ActionTarget | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<ActionTarget | null>(null);
+  const [searchInput, setSearchInput] = useState('');
+  const [debouncedSearchQuery, setDebouncedSearchQuery] = useState('');
+  const [autoProvisionError, setAutoProvisionError] = useState<string | null>(null);
+  const autoProvisionedCourseRef = useRef<string | null>(null);
 
-  const selectedCourse = courses.find(course => course.id === id);
+  const selectedGroup = courseGroupsQuery.data?.find((group) =>
+    group.courses.some((course) => course.studentCourseSqid === id),
+  );
+  const selectedCourse = selectedGroup?.courses.find((course) => course.studentCourseSqid === id);
 
-  // --- DYNAMIC STATE (CHANGED: Now loads from localStorage!) ---
-  const [files, setFiles] = useState(() => {
-    // 1. Grab any custom files we saved from CreateNotes
-    const savedFiles = JSON.parse(localStorage.getItem('custom_course_files') || '[]');
-    
-    // 2. Define your default hardcoded files
-    const defaultFiles = [
-      { name: "Course Image", icon: "folder", size: "10 mb", dateCreated: "Sept 7, 2025" },
-      { name: "Chapter 1 Introduction", icon: "pdf", size: "163 kb", dateCreated: "Sept 7, 2025" },
-      { name: "Syllabus", icon: "presentation", size: "102 mb", dateCreated: "Sept 7, 2025" },
-      { name: "My notes", icon: "notes", size: "10 mb", dateCreated: "Sept 7, 2025" },
-      { name: "Reference Materials", icon: "folder", size: "10 mb", dateCreated: "Sept 7, 2025" },
-      { name: "Assignment 1", icon: "pdf", size: "2.4 mb", dateCreated: "Sept 7, 2025" },
-      { name: "Lecture Video", icon: "folder", size: "450 mb", dateCreated: "Sept 7, 2025" },
-    ];
-
-    // 3. Combine them! Saved files go first so they appear at the top.
-    return [...savedFiles, ...defaultFiles];
-  });
-
-  // --- SEARCH STATE ---
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // --- FILTERED FILES (Derived State) ---
-  const filteredFiles = files.filter(file => 
-    file.name.toLowerCase().includes(searchQuery.toLowerCase())
+  const rootFolder = useMemo(
+    () =>
+      foldersQuery.data?.find(
+        (folder) => folder.studentCourseSqid === id && folder.parentFolderSqid === null,
+      ) ??
+      foldersQuery.data?.find((folder) => folder.studentCourseSqid === id) ??
+      null,
+    [foldersQuery.data, id],
   );
 
-  // --- FUNCTION: Add a new folder ---
-  const handleAddFolder = (folderName: string) => {
-    const today = new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-    const newFolder = {
-      name: folderName,
-      icon: "folder",
-      size: "--", 
-      dateCreated: today
-    };
-    
-    setFiles(prevFiles => [newFolder, ...prevFiles]);
-    setIsCreateMenuOpen(false); 
-  };
+  const folderSqidFromUrl = searchParams.get('folder');
+  const activeFolderSqid = folderSqidFromUrl?.trim() || rootFolder?.sqid || null;
 
-  // --- FUNCTION: Delete a file/folder ---
-  const handleDeleteFile = (fileNameToDelete: string) => {
-    // Note: If you want to permanently delete saved notes, you would also 
-    // update localStorage here. For now, it just removes it from the current view.
-    setFiles(prevFiles => prevFiles.filter(file => file.name !== fileNameToDelete));
-    setActiveMenuFile(null); // Close the menu after deleting
-  };
+  const currentFolder = useMemo(
+    () =>
+      foldersQuery.data?.find((folder) => folder.sqid === activeFolderSqid) ??
+      null,
+    [activeFolderSqid, foldersQuery.data],
+  );
+  const renameDocumentQuery = useDocumentQuery(renameTarget?.type === 'document' ? renameTarget.sqid : null);
+  const updateFolderMutation = useUpdateFolderMutation(renameTarget?.type === 'folder' ? renameTarget.sqid : null);
+  const updateDocumentMutation = useUpdateDocumentMutation(renameTarget?.type === 'document' ? renameTarget.sqid : null);
+  const patchNoteMutation = usePatchNoteMutation(renameTarget?.type === 'note' ? renameTarget.sqid : null);
+  const deleteDocumentMutation = useDeleteDocumentMutation();
+  const deleteNoteMutation = useDeleteNoteMutation();
+  const uploadFolderDocumentMutation = useUploadFolderDocumentMutation(activeFolderSqid);
 
-  // Close menus on Scroll to keep UI clean
+  const breadcrumbs = useMemo(
+    () => buildBreadcrumbs(currentFolder ?? rootFolder, foldersQuery.data ?? []),
+    [currentFolder, foldersQuery.data, rootFolder],
+  );
+
+  const folderContentsQuery = useFolderContentsQuery(activeFolderSqid);
+  const folderSearchQuery = useFolderSearchQuery(activeFolderSqid, debouncedSearchQuery);
+
   useEffect(() => {
-    const handleScroll = () => {
-      setActiveMenuFile(null);
-      setIsCreateMenuOpen(false);
-    };
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
-  }, []);
+    if (!rootFolder) {
+      return;
+    }
+
+    if (!folderSqidFromUrl) {
+      return;
+    }
+
+    const exists = foldersQuery.data?.some((folder) => folder.sqid === folderSqidFromUrl);
+    if (!exists) {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.delete('folder');
+      setSearchParams(nextParams, { replace: true });
+    }
+  }, [folderSqidFromUrl, foldersQuery.data, rootFolder, searchParams, setSearchParams]);
+
+  useEffect(() => {
+    setSearchInput('');
+    setDebouncedSearchQuery('');
+  }, [activeFolderSqid]);
+
+  useEffect(() => {
+    autoProvisionedCourseRef.current = null;
+    setAutoProvisionError(null);
+  }, [id]);
+
+  useEffect(() => {
+    if (!id || !selectedCourse || !selectedGroup || rootFolder || foldersQuery.isPending || createFolderMutation.isPending) {
+      return;
+    }
+
+    if (autoProvisionedCourseRef.current === id) {
+      return;
+    }
+
+    autoProvisionedCourseRef.current = id;
+    setAutoProvisionError(null);
+
+    const reservedFolderKeys = new Set((foldersQuery.data ?? []).map((folder) => folder.folderKey));
+    const folderName = selectedCourse.courseName.trim() || selectedCourse.edpCode.trim() || 'Course Folder';
+
+    void createFolderMutation
+      .mutateAsync({
+        folderKey: buildUniqueFolderKey(folderName, reservedFolderKeys),
+        name: folderName,
+        schoolYearStart: selectedGroup.schoolYearStart,
+        schoolYearEnd: selectedGroup.schoolYearEnd,
+        semester: selectedGroup.semester,
+        studentCourseSqid: selectedCourse.studentCourseSqid,
+        parentFolderSqid: null,
+      })
+      .then(() => {
+        setAutoProvisionError(null);
+      })
+      .catch((error: unknown) => {
+        autoProvisionedCourseRef.current = null;
+        setAutoProvisionError(getErrorMessage(error));
+      });
+  }, [
+    createFolderMutation,
+    foldersQuery.data,
+    foldersQuery.isPending,
+    id,
+    rootFolder,
+    selectedCourse,
+    selectedGroup,
+  ]);
+
+  useEffect(() => {
+    const trimmedQuery = searchInput.trim();
+    if (trimmedQuery.length < 2) {
+      setDebouncedSearchQuery('');
+      return;
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setDebouncedSearchQuery(trimmedQuery);
+    }, 350);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [searchInput]);
+
+  const displayItems = useMemo<DisplayItem[]>(() => {
+    if (debouncedSearchQuery.trim().length >= 2 && folderSearchQuery.data) {
+      return folderSearchQuery.data.results.map((result) => ({
+        sqid: result.sqid,
+        name: result.name,
+        type:
+          result.itemType.toLowerCase().includes('folder')
+            ? 'folder'
+            : result.itemType.toLowerCase().includes('note')
+              ? 'note'
+              : 'document',
+        typeLabel: result.itemType,
+        createdAtLabel: 'Unavailable',
+        updatedAtLabel: 'Unavailable',
+        detailLabel: 'Path',
+        detailValue: result.locationDisplayPath,
+      }));
+    }
+
+    if (!folderContentsQuery.data) {
+      return [];
+    }
+
+    return [
+      ...folderContentsQuery.data.subFolders.map((item) => ({
+        sqid: item.sqid,
+        name: item.name,
+        type: 'folder' as const,
+        typeLabel: 'Folder',
+        createdAtLabel: formatDateTimeLabel(item.createdAt),
+        updatedAtLabel: formatDateTimeLabel(item.updatedAt),
+      })),
+      ...folderContentsQuery.data.documents.map((item) => ({
+        sqid: item.sqid,
+        name: item.name,
+        type: 'document' as const,
+        typeLabel: 'Document',
+        createdAtLabel: formatDateTimeLabel(item.createdAt),
+        updatedAtLabel: formatDateTimeLabel(item.updatedAt),
+      })),
+      ...folderContentsQuery.data.notes.map((item) => ({
+        sqid: item.sqid,
+        name: item.name,
+        type: 'note' as const,
+        typeLabel: 'Note',
+        createdAtLabel: formatDateTimeLabel(item.createdAt),
+        updatedAtLabel: formatDateTimeLabel(item.updatedAt),
+      })),
+    ];
+  }, [debouncedSearchQuery, folderContentsQuery.data, folderSearchQuery.data]);
+
+  const isLoading =
+    courseGroupsQuery.isPending ||
+    foldersQuery.isPending ||
+    (Boolean(activeFolderSqid) && folderContentsQuery.isPending);
+
+  const activeError =
+    courseGroupsQuery.error ??
+    foldersQuery.error ??
+    folderContentsQuery.error ??
+    folderSearchQuery.error ??
+    null;
+
+  const showFolderEmptyState =
+    debouncedSearchQuery.trim().length < 2 &&
+    !folderContentsQuery.isPending &&
+    folderContentsQuery.data !== undefined &&
+    folderContentsQuery.data.subFolders.length === 0 &&
+    folderContentsQuery.data.documents.length === 0 &&
+    folderContentsQuery.data.notes.length === 0;
+  const renameError =
+    updateFolderMutation.error ??
+    updateDocumentMutation.error ??
+    patchNoteMutation.error ??
+    renameDocumentQuery.error ??
+    null;
+  const deleteError =
+    deleteFolderMutation.error ??
+    deleteDocumentMutation.error ??
+    deleteNoteMutation.error ??
+    null;
+  const isRenaming =
+    updateFolderMutation.isPending ||
+    updateDocumentMutation.isPending ||
+    patchNoteMutation.isPending ||
+    renameDocumentQuery.isLoading;
+  const isDeleting =
+    deleteFolderMutation.isPending ||
+    deleteDocumentMutation.isPending ||
+    deleteNoteMutation.isPending;
+
+  async function handleCreateFolder(folderName: string) {
+    const folderContext = currentFolder ?? rootFolder;
+    if (!folderContext || !selectedCourse?.studentCourseSqid) {
+      return;
+    }
+
+    const parentFolderSqid = folderSqidFromUrl?.trim() || rootFolder?.sqid || null;
+    const reservedFolderKeys = new Set((foldersQuery.data ?? []).map((folder) => folder.folderKey));
+
+    try {
+      await createFolderMutation.mutateAsync({
+        folderKey: buildUniqueFolderKey(folderName, reservedFolderKeys),
+        name: folderName.trim(),
+        schoolYearStart: folderContext.schoolYearStart,
+        schoolYearEnd: folderContext.schoolYearEnd,
+        semester: folderContext.semester,
+        studentCourseSqid: selectedCourse.studentCourseSqid,
+        parentFolderSqid,
+      });
+
+      setIsCreateFolderModalOpen(false);
+      createFolderMutation.reset();
+      showSuccess('Folder created successfully.');
+    } catch {
+      // Mutation error is rendered from createFolderMutation.error.
+    }
+  }
+
+  async function handleUploadDocument(file: File, documentName?: string) {
+    if (!activeFolderSqid) {
+      return;
+    }
+
+    try {
+      await uploadFolderDocumentMutation.mutateAsync({ file, documentName });
+      setIsImportModalOpen(false);
+      uploadFolderDocumentMutation.reset();
+      showSuccess('File added successfully.');
+    } catch {
+      // mutation error rendered in modal
+    }
+  }
+
+  async function handleRenameItem(nextName: string) {
+    if (!renameTarget) {
+      return;
+    }
+
+    try {
+      if (renameTarget.type === 'folder') {
+        const folder = foldersQuery.data?.find((item) => item.sqid === renameTarget.sqid);
+        if (!folder) {
+          return;
+        }
+
+        await updateFolderMutation.mutateAsync({
+          folderKey: folder.folderKey,
+          name: nextName,
+          schoolYearStart: folder.schoolYearStart,
+          schoolYearEnd: folder.schoolYearEnd,
+          semester: folder.semester,
+          studentCourseSqid: folder.studentCourseSqid,
+          parentFolderSqid: folder.parentFolderSqid,
+        });
+      } else if (renameTarget.type === 'document') {
+        const document = renameDocumentQuery.data;
+        if (!document) {
+          return;
+        }
+
+        await updateDocumentMutation.mutateAsync({
+          documentName: nextName,
+          folderSqid: document.folderSqid,
+          fileMetadataSqid: document.fileMetadataSqid,
+        });
+      } else {
+        await patchNoteMutation.mutateAsync({
+          name: nextName,
+        });
+      }
+
+      setRenameTarget(null);
+      showSuccess(
+        `${renameTarget.type === 'folder' ? 'Folder' : renameTarget.type === 'document' ? 'Document' : 'Note'} renamed successfully.`,
+      );
+    } catch {
+      // error shown in modal
+    }
+  }
+
+  async function handleDeleteItem() {
+    if (!deleteTarget) {
+      return;
+    }
+
+    try {
+      if (deleteTarget.type === 'folder') {
+        await deleteFolderMutation.mutateAsync(deleteTarget.sqid);
+
+        if (activeFolderSqid === deleteTarget.sqid) {
+          navigateToFolder(currentFolder?.parentFolderSqid ?? null);
+        }
+      } else if (deleteTarget.type === 'document') {
+        await deleteDocumentMutation.mutateAsync(deleteTarget.sqid);
+      } else {
+        await deleteNoteMutation.mutateAsync(deleteTarget.sqid);
+      }
+
+      setDeleteTarget(null);
+      showSuccess(
+        `${deleteTarget.type === 'folder' ? 'Folder' : deleteTarget.type === 'document' ? 'Document' : 'Note'} deleted successfully.`,
+      );
+    } catch {
+      // error shown in modal
+    }
+  }
+
+  async function handleItemClick(item: DisplayItem) {
+    if (item.type === 'folder') {
+      const nextParams = new URLSearchParams(searchParams);
+      nextParams.set('folder', item.sqid);
+      setSearchParams(nextParams);
+      return;
+    }
+
+    if (item.type === 'note') {
+      navigate(`/notes/${item.sqid}`, {
+        state: {
+          from: `${location.pathname}${location.search}`,
+        },
+      });
+      return;
+    }
+
+    if (item.type === 'document') {
+      navigate(`/documents/${item.sqid}`, {
+        state: {
+          from: `${location.pathname}${location.search}`,
+        },
+      });
+    }
+  }
+
+  function navigateToFolder(folderSqid: string | null) {
+    const nextParams = new URLSearchParams(searchParams);
+    if (folderSqid) {
+      nextParams.set('folder', folderSqid);
+    } else {
+      nextParams.delete('folder');
+    }
+
+    setSearchParams(nextParams);
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
+        <div className="h-48 w-full max-w-xl animate-pulse rounded-[32px] border border-white/10 bg-white/5" />
+      </div>
+    );
+  }
+
+  if (activeError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <div className="max-w-xl rounded-[32px] border border-rose-400/20 bg-rose-950/20 p-8">
+          <h1 className="text-2xl font-bold">Unable to load course details</h1>
+          <p className="mt-3 text-white/70">{getErrorMessage(activeError)}</p>
+          <button
+            onClick={() => navigate('/courses')}
+            className="mt-6 rounded-xl bg-white px-5 py-3 text-sm font-bold text-black"
+          >
+            Back to courses
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!selectedCourse) {
     return (
-      <div className="min-h-screen bg-black text-white flex items-center justify-center">
+      <div className="flex min-h-screen items-center justify-center bg-black text-white">
         <p>Course not found</p>
-        <button onClick={() => navigate('/courses')} className="ml-4 underline">Go back</button>
+        <button onClick={() => navigate('/courses')} className="ml-4 underline">
+          Go back
+        </button>
+      </div>
+    );
+  }
+
+  if (!rootFolder) {
+    const isPreparingCourseFolder = createFolderMutation.isPending && !isCreateFolderModalOpen;
+
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-black px-6 text-white">
+        <div className="max-w-xl rounded-[32px] border border-white/10 bg-[#050505] p-8">
+          <h1 className="text-2xl font-bold">
+            {isPreparingCourseFolder ? 'Preparing course folder' : 'No course folder yet'}
+          </h1>
+          <p className="mt-3 text-white/70">
+            {isPreparingCourseFolder
+              ? 'Setting up the root folder for this course so its documents and notes can load.'
+              : 'This course is linked, but there is no folder root available yet for its documents and notes.'}
+          </p>
+
+          {autoProvisionError && (
+            <div className="mt-6 rounded-2xl border border-rose-400/20 bg-rose-950/20 px-4 py-3 text-sm text-rose-100">
+              {autoProvisionError}
+            </div>
+          )}
+
+          <div className="mt-6 flex flex-wrap gap-3">
+            {!isPreparingCourseFolder && (
+              <button
+                type="button"
+                onClick={() => {
+                  autoProvisionedCourseRef.current = null;
+                  setAutoProvisionError(null);
+                }}
+                className="rounded-xl border border-white/20 bg-white/5 px-5 py-3 text-sm font-bold text-white transition hover:border-[#00CEC8]/70 hover:text-[#00CEC8]"
+              >
+                Retry setup
+              </button>
+            )}
+            <button
+              onClick={() => navigate('/courses')}
+              className="rounded-xl bg-white px-5 py-3 text-sm font-bold text-black"
+            >
+              Back to courses
+            </button>
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
     <>
-      <div className={`min-h-screen bg-black text-white p-6 lg:px-16 lg:py-10 font-sans antialiased transition-all duration-500 ${isImportModalOpen ? 'blur-md' : ''}`}>
-        
-        {/* Top Navigation Row */}
-        <div className="flex items-center justify-between mb-12">
+      <div
+        className={`min-h-screen bg-black p-6 font-sans text-white antialiased transition-all duration-500 lg:px-16 lg:py-10 ${
+          isImportModalOpen || isCreateFolderModalOpen || Boolean(renameTarget) || Boolean(deleteTarget) ? 'blur-md' : ''
+        }`}
+      >
+        <div className="mb-12 flex items-center justify-between">
           <div className="flex items-center gap-6">
-            <button 
+            <button
               onClick={() => navigate('/courses')}
-              className="w-10 h-10 rounded-full border border-white/20 flex items-center justify-center hover:bg-white/10 transition-all bg-black/50 backdrop-blur-md"
+              className="flex h-10 w-10 items-center justify-center rounded-full border border-white/20 bg-black/50 backdrop-blur-md transition-all hover:bg-white/10"
             >
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M19 12H5M12 19l-7-7 7-7"/>
+                <path d="M19 12H5M12 19l-7-7 7-7" />
               </svg>
             </button>
             <img src={logo} alt="educAIte" className="h-10" />
           </div>
         </div>
 
-        {/* Dynamic Title Section */}
-        <div className="flex flex-col lg:flex-row justify-between items-start gap-8 mb-16">
+        <div className="mb-16 flex flex-col items-start justify-between gap-8 lg:flex-row">
           <div>
-            <h1 className="text-5xl font-medium mb-4 tracking-tight">Files</h1>
-            <h2 className="text-[#00CEC8] text-4xl font-semibold leading-tight">
-              {selectedCourse.title}
+            <h1 className="mb-4 text-5xl font-medium tracking-tight">Files</h1>
+            <h2 className="text-4xl font-semibold leading-tight text-[#00CEC8]">
+              {selectedCourse.courseName}
             </h2>
-            
-            <div className="flex gap-4 mt-8">
-              {/* IMPORT BUTTON */}
-              <button 
-                onClick={() => setIsImportModalOpen(true)}
-                className="bg-white text-black font-normal px-10 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform"
+            <div className="mt-5 flex flex-wrap items-center gap-3 text-sm text-white/60">
+              <span className="rounded-full border border-white/10 bg-white/5 px-4 py-2 font-semibold text-white">
+                {selectedCourse.edpCode}
+              </span>
+              <span>{selectedCourse.units.toFixed(1)} units</span>
+              {selectedGroup && <span>{selectedGroup.groupLabel}</span>}
+              <span title={(currentFolder ?? rootFolder).name} className="max-w-[14rem] truncate">
+                {(currentFolder ?? rootFolder).name}
+              </span>
+            </div>
+
+            <div className="mt-6 flex flex-wrap items-center gap-3 text-sm">
+              <button
+                type="button"
+                onClick={() => navigateToFolder(currentFolder?.parentFolderSqid ?? null)}
+                disabled={!currentFolder?.parentFolderSqid}
+                className={`rounded-full border px-4 py-2 transition-all ${
+                  currentFolder?.parentFolderSqid
+                    ? 'border-white/20 bg-white/5 text-white hover:border-[#00CEC8]/70 hover:text-[#00CEC8]'
+                    : 'cursor-not-allowed border-white/10 bg-white/[0.03] text-white/30'
+                }`}
               >
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                Import file
+                Back Folder
               </button>
 
-              {/* CREATE BUTTON WITH MENU */}
-              <div className="relative">
-                <button 
-                  onClick={() => setIsCreateMenuOpen(!isCreateMenuOpen)}
-                  className="bg-white text-black font-normal px-10 py-3 rounded-full flex items-center gap-2 shadow-[0_0_20px_rgba(255,255,255,0.3)] hover:scale-105 transition-transform"
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5"><path d="M12 5v14M5 12h14"/></svg>
-                  Create
-                </button>
-                {/* Linked to handleAddFolder */}
-                {isCreateMenuOpen && <CreateMenu onClose={() => setIsCreateMenuOpen(false)} onFolderCreated={handleAddFolder} />}
+              <div className="flex flex-wrap items-center gap-2 text-white/50">
+                {breadcrumbs.map((folder, index) => {
+                  const isLast = index === breadcrumbs.length - 1;
+                  return (
+                    <div key={folder.sqid} className="flex items-center gap-2">
+                      <button
+                        type="button"
+                        onClick={() => navigateToFolder(folder.sqid === rootFolder.sqid ? null : folder.sqid)}
+                        className={`max-w-[10rem] truncate rounded-full px-3 py-1.5 text-sm transition-colors ${
+                          isLast ? 'bg-white/10 text-white' : 'hover:text-[#00CEC8]'
+                        }`}
+                        title={folder.name}
+                      >
+                        {folder.name}
+                      </button>
+                      {!isLast && <span className="text-white/25">/</span>}
+                    </div>
+                  );
+                })}
               </div>
+            </div>
+
+            <div className="mt-8 flex gap-4">
+              <button
+                type="button"
+                onClick={() => {
+                  createFolderMutation.reset();
+                  setIsCreateFolderModalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-full border border-white/20 bg-white/[0.03] px-8 py-3 font-normal text-white transition-all hover:border-[#00CEC8]/70 hover:text-[#00CEC8]"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                New Folder
+              </button>
+
+              <button
+                onClick={() => {
+                  uploadFolderDocumentMutation.reset();
+                  setIsImportModalOpen(true);
+                }}
+                className="flex items-center gap-2 rounded-full bg-white px-10 py-3 font-normal text-black shadow-[0_0_20px_rgba(255,255,255,0.3)] transition-transform hover:scale-105"
+              >
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                  <path d="M12 5v14M5 12h14" />
+                </svg>
+                Import file
+              </button>
             </div>
           </div>
 
-          {/* Search Section */}
           <div className="w-full max-w-xl">
-            <p className="text-white text-xl font-medium mb-4">Search files</p>
-            <div className="relative flex gap-2">
-              <div className="relative flex-1">
-                <input 
-                  type="text" 
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search" 
-                  className="w-full bg-black border border-white/20 rounded-full py-3 pl-12 pr-4 focus:border-[#00CEC8] outline-none transition-all"
-                />
-                <svg className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
-              </div>
-              <button className="bg-white text-black font-medium px-8 py-2 rounded-full hover:bg-gray-200 transition-colors">Search</button>
+            <p className="mb-4 text-xl font-medium text-white">Search files</p>
+            <div className="relative">
+              <input
+                type="text"
+                value={searchInput}
+                onChange={(event) => setSearchInput(event.target.value)}
+                placeholder="Search"
+                className="w-full rounded-full border border-white/20 bg-black py-3 pl-12 pr-4 outline-none transition-all focus:border-[#00CEC8]"
+              />
+              <svg
+                className="absolute left-4 top-1/2 -translate-y-1/2 text-white/40"
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="11" cy="11" r="8" />
+                <path d="m21 21-4.3-4.3" />
+              </svg>
             </div>
-            <p className="text-white/40 text-[11px] mt-3 ml-2 uppercase tracking-widest font-bold">Enter at least 2 characters to search</p>
+            <p className="ml-2 mt-3 text-[11px] font-bold uppercase tracking-widest text-white/40">
+              Search starts automatically after 2 characters
+            </p>
           </div>
         </div>
 
-        {/* Files Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6">
-          
-          {/* Empty State when search finds nothing */}
-          {filteredFiles.length === 0 && (
-            <div className="col-span-full py-12 text-center text-white/40">
-              <p className="text-lg">No files found matching "{searchQuery}"</p>
-            </div>
-          )}
+        {debouncedSearchQuery.trim().length >= 2 && (
+          <div className="mb-8 rounded-[24px] border border-white/10 bg-white/[0.03] px-5 py-4">
+            <p className="text-sm text-white/65">
+              Showing search results for <span className="font-semibold text-white">"{debouncedSearchQuery}"</span>
+            </p>
+          </div>
+        )}
 
-          {/* Mapping over the filteredFiles state */}
-          {filteredFiles.map((file, index) => (
-            <div 
-              key={`${file.name}-${index}`} 
-              className="bg-[#050505] border border-white/10 rounded-[24px] p-6 hover:border-[#00CEC8]/100 transition-all group relative cursor-pointer"
-            >
-              {/* THREE DOTS ACTION MENU */}
-              <div className="absolute top-4 right-4 z-30">
-                <button 
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    // Toggle by file name
-                    setActiveMenuFile(activeMenuFile === file.name ? null : file.name);
-                  }}
-                  className={`p-1 rounded-full transition-colors ${activeMenuFile === file.name ? 'bg-white/10 text-white' : 'text-white/40 hover:text-white'}`}
-                >
-                  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
-                    <circle cx="12" cy="5" r="1"/><circle cx="12" cy="12" r="1"/><circle cx="12" cy="19" r="1"/>
-                  </svg>
-                </button>
+        {debouncedSearchQuery.trim().length >= 2 && folderSearchQuery.isPending && (
+          <div className="py-12 text-center text-white/40">
+            <p className="text-lg">Searching folder contents...</p>
+          </div>
+        )}
 
-                {activeMenuFile === file.name && (
-                  <FileActionMenu 
-                    onClose={() => setActiveMenuFile(null)}
-                    onDownload={() => console.log('Download', file.name)}
-                    // Pass the file name to the delete function
-                    onDelete={() => handleDeleteFile(file.name)}
-                  />
-                )}
+        {showFolderEmptyState ? (
+          <EmptyFolderState />
+        ) : (
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5">
+            {displayItems.length === 0 && !folderSearchQuery.isPending && debouncedSearchQuery.trim().length >= 2 && (
+              <div className="col-span-full py-12 text-center text-white/40">
+                <p className="text-lg">No files found matching "{debouncedSearchQuery}"</p>
               </div>
+            )}
 
-               <div className="flex flex-col items-center text-center pt-8 pb-10">
-                  <div className="mb-6 group-hover:scale-110 transition-transform duration-300">
-                     {file.icon === 'folder' && <svg width="60" height="60" viewBox="0 0 24 24" fill="white"><path d="M10 4H4c-1.1 0-1.99.9-1.99 2L2 18c0 1.1.9 2 2 2h16c1.1 0 2-.9 2-2V8c0-1.1-.9-2-2-2h-8l-2-2z"/></svg>}
-                     {file.icon === 'pdf' && <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6M10 13l-1 2H8l2-4h1l2 4h-1l-1-2z"/></svg>}
-                     {file.icon === 'presentation' && <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="1.5"><rect x="3" y="3" width="18" height="12" rx="2"/><path d="M12 15v3m-4 3h8m-7-13 3 3 3-3"/></svg>}
-                     {file.icon === 'notes' && <svg width="60" height="60" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2"><path d="M4 6h16M4 12h16M4 18h12"/></svg>}
-                  </div>
-                  <p className="font-semibold text-lg leading-tight px-2">{file.name}</p>
-               </div>
-               
-               <div className="space-y-1 text-[10px] text-white/40 font-bold uppercase tracking-widest">
-                 <p>Size: <span className="text-white/80">{file.size}</span></p>
-                 <p>Last Created: <span className="text-white/80">{file.dateCreated}</span></p>
-               </div>
-            </div>
-          ))}
-        </div>
-        
-        {/* Floating Robot */}
+            {displayItems.map((item) => {
+              const isInteractive = true;
+              return (
+                <ExplorerItemCard
+                  key={`${item.type}-${item.sqid}`}
+                  name={item.name}
+                  type={item.type}
+                  typeLabel={item.typeLabel}
+                  createdAtLabel={item.createdAtLabel}
+                  updatedAtLabel={item.updatedAtLabel}
+                  detailLabel={item.detailLabel}
+                  detailValue={item.detailValue}
+                  isInteractive={isInteractive}
+                  onClick={() => void handleItemClick(item)}
+                  onEdit={() => {
+                    updateFolderMutation.reset();
+                    updateDocumentMutation.reset();
+                    patchNoteMutation.reset();
+                    setRenameTarget({ sqid: item.sqid, name: item.name, type: item.type });
+                  }}
+                  onDelete={() => {
+                    deleteFolderMutation.reset();
+                    deleteDocumentMutation.reset();
+                    deleteNoteMutation.reset();
+                    setDeleteTarget({ sqid: item.sqid, name: item.name, type: item.type });
+                  }}
+                />
+              );
+            })}
+          </div>
+        )}
+
         <div className="fixed bottom-8 right-8 z-50">
-          <div className="w-14 h-14 rounded-full border border-white/20 bg-[#050505] flex items-center justify-center overflow-hidden cursor-pointer hover:scale-110 transition-all shadow-xl">
-            <img src={AImpatin} alt="bot" className="w-9 h-9 object-contain" />
+          <div className="flex h-14 w-14 cursor-pointer items-center justify-center overflow-hidden rounded-full border border-white/20 bg-[#050505] shadow-xl transition-all hover:scale-110">
+            <img src={AImpatin} alt="bot" className="h-9 w-9 object-contain" />
           </div>
         </div>
       </div>
 
-      {/* Modal Overlay */}
-      {isImportModalOpen && (
-        <ImportFileModal onClose={() => setIsImportModalOpen(false)} />
+      {isCreateFolderModalOpen && (
+        <CreateFolder
+          isOpen={isCreateFolderModalOpen}
+          onClose={() => {
+            if (!createFolderMutation.isPending) {
+              setIsCreateFolderModalOpen(false);
+              createFolderMutation.reset();
+            }
+          }}
+          isSubmitting={createFolderMutation.isPending}
+          errorMessage={createFolderMutation.error ? getErrorMessage(createFolderMutation.error) : null}
+          onCreate={handleCreateFolder}
+        />
       )}
+      <ImportFileModal
+        isOpen={isImportModalOpen}
+        onClose={() => {
+          if (!uploadFolderDocumentMutation.isPending) {
+            setIsImportModalOpen(false);
+            uploadFolderDocumentMutation.reset();
+          }
+        }}
+        isSubmitting={uploadFolderDocumentMutation.isPending}
+        errorMessage={uploadFolderDocumentMutation.error ? getErrorMessage(uploadFolderDocumentMutation.error) : null}
+        onUpload={handleUploadDocument}
+      />
+      <RenameItemModal
+        isOpen={Boolean(renameTarget)}
+        title={
+          renameTarget?.type === 'folder'
+            ? 'Rename Folder'
+            : renameTarget?.type === 'document'
+              ? 'Rename Document'
+              : 'Rename Note'
+        }
+        initialName={renameTarget?.name ?? ''}
+        isSubmitting={isRenaming}
+        errorMessage={renameError ? getErrorMessage(renameError) : null}
+        onClose={() => {
+          if (!isRenaming) {
+            setRenameTarget(null);
+            updateFolderMutation.reset();
+            updateDocumentMutation.reset();
+            patchNoteMutation.reset();
+          }
+        }}
+        onSubmit={handleRenameItem}
+      />
+      <DeleteItemModal
+        isOpen={Boolean(deleteTarget)}
+        title={
+          deleteTarget?.type === 'folder'
+            ? 'Delete Folder'
+            : deleteTarget?.type === 'document'
+              ? 'Delete Document'
+              : 'Delete Note'
+        }
+        itemName={deleteTarget?.name ?? ''}
+        isSubmitting={isDeleting}
+        errorMessage={deleteError ? getErrorMessage(deleteError) : null}
+        onClose={() => {
+          if (!isDeleting) {
+            setDeleteTarget(null);
+            deleteFolderMutation.reset();
+            deleteDocumentMutation.reset();
+            deleteNoteMutation.reset();
+          }
+        }}
+        onConfirm={handleDeleteItem}
+      />
     </>
-  )
-}
+  );
+};
 
-export default CourseDetails
+export default CourseDetails;

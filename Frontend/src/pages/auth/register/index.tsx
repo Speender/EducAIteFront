@@ -7,6 +7,8 @@ import RegisterForm from './components/RegisterForm';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
+  const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
+  const [fileErrorMessage, setFileErrorMessage] = React.useState<string | undefined>();
 
   return (
     <div className="min-h-screen bg-black text-white font-sans relative overflow-hidden flex flex-col antialiased">
@@ -42,8 +44,19 @@ const Register: React.FC = () => {
 
       {/* --- MAIN CONTENT LAYOUT --- */}
       <main className="flex-1 w-full max-w-[1280px] mx-auto flex flex-col md:flex-row items-center md:items-start justify-center px-6 md:px-12 lg:px-20 pt-10 md:pt-20 gap-10 md:gap-16 lg:gap-20 relative z-10">
-        <RegisterHero />
-        <RegisterForm />
+        <RegisterHero
+          selectedFile={selectedFile}
+          onFileChange={(file) => {
+            setSelectedFile(file);
+            setFileErrorMessage(undefined);
+          }}
+          errorMessage={fileErrorMessage}
+        />
+        <RegisterForm
+          selectedFile={selectedFile}
+          onMissingFile={setFileErrorMessage}
+          onFileAccepted={() => setFileErrorMessage(undefined)}
+        />
       </main>
 
       {/* --- EARTH BACKGROUND --- */}

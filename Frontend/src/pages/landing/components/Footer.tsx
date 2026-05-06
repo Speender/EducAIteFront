@@ -1,4 +1,3 @@
-import React from 'react';
 
 // Reusable Info Icon SVG
 const InfoIcon = () => (

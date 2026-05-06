@@ -1,10 +1,12 @@
-import React from 'react'
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, Navigate, useLocation } from 'react-router-dom'
 
 import Navbar from './components/Navbar'
 import EducAIteAssistantRobot from './components/EducAIteAssistantRobot'
+import ProtectedRoute from './components/ProtectedRoute'
+import { ToastProvider } from './components/ToastProvider'
+import { isAuthenticated } from './lib/api/auth'
 
-import LandingPage from "./pages/landing";
+import LandingPage from './pages/landing'
 import Main from './pages/main'
 import CoursePage from './pages/course'
 import CourseDetails from './pages/course/component/CourseDetails'
@@ -12,18 +14,24 @@ import AnalyticsPage from './pages/analytics'
 import FlashcardsPage from './pages/flashcards'
 import TrackerPage from './pages/tracker'
 import ResumePage from './pages/resume'
+import CertificatesPage from './pages/certificates'
 import SettingsPage from './pages/settings'
 import CreateNotes from './pages/course/component/CreateNotes'
+import NoteDetailsPage from './pages/notes/NoteDetailsPage'
+import DocumentDetailsPage from './pages/documents/DocumentDetailsPage'
 import Login from './pages/auth/login'
 import Register from './pages/auth/register'
 import ForgotPasswordPage from './pages/auth/forgot'
 import Calender from './pages/calendar'
-import { CardsPage } from './pages/flashcards/pages/CardsPage'; 
-import { LearnPage } from './pages/flashcards/pages/LearnPage';
-import { CodeLearnPage } from './pages/flashcards/pages/CodeLearnPage';
-import { CodeChallengePage } from './pages/flashcards/pages/CodingChallengePage';
-import { PerformancePage } from './pages/flashcards/pages/PerformancePage';
-import { CreateCardPage } from './pages/flashcards/pages/CreateCardPage';
+import NotFoundPage from './pages/not-found'
+
+function RootRoute() {
+  if (isAuthenticated()) {
+    return <Navigate to="/main" replace />
+  }
+
+  return <LandingPage />
+}
 
 function AppContent() {
   const location = useLocation()
@@ -33,7 +41,10 @@ function AppContent() {
     location.pathname === '/login' ||
     location.pathname === '/register' ||
     location.pathname === '/forgot' ||
-    location.pathname.startsWith('/auth')
+    location.pathname === '/not-found' ||
+    location.pathname.startsWith('/auth') ||
+    location.pathname.endsWith('/learn') ||
+    location.pathname.endsWith('/session')
 
   return (
     <div className="min-h-screen bg-black text-white font-sans antialiased">
@@ -45,32 +56,29 @@ function AppContent() {
       )}
       <main>
         <Routes>
-          
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/main" element={<Main />} />
-          <Route path="/courses" element={<CoursePage />} />
-          <Route path="/course" element={<CoursePage />} />
-          <Route path="/courses/:id" element={<CourseDetails />} />
-          <Route path="/create-notes" element={<CreateNotes />} />
-          <Route path="/analytics" element={<AnalyticsPage />} />
-
-          <Route path="/flashcards/*" element={<FlashcardsPage />} />
-          <Route path="/cards" element={<CardsPage />} />
-          <Route path="/create-card" element={<CreateCardPage />} />
-          <Route path="/learn" element={<LearnPage />} />
-          <Route path="/code-learn" element={<CodeLearnPage />} />
-          <Route path="/code-challenge" element={<CodeChallengePage />} />
-          <Route path="/performance" element={<PerformancePage />} />
-
-          <Route path="/tracker" element={<TrackerPage />} />
-          <Route path="/resume" element={<ResumePage />} />
-          <Route path="/settings" element={<SettingsPage />} />
-          <Route path="/calendar" element={<Calender />} />
-
-
+          <Route path="/" element={<RootRoute />} />
           <Route path="/login" element={<Login />} />
           <Route path="/register" element={<Register />} />
           <Route path="/forgot" element={<ForgotPasswordPage />} />
+          <Route path="/not-found" element={<NotFoundPage />} />
+          <Route element={<ProtectedRoute />}>
+            <Route path="/main" element={<Main />} />
+            <Route path="/courses" element={<CoursePage />} />
+            <Route path="/course" element={<CoursePage />} />
+            <Route path="/courses/:id" element={<CourseDetails />} />
+            <Route path="/documents/:documentSqid" element={<DocumentDetailsPage />} />
+            <Route path="/notes/:noteSqid" element={<NoteDetailsPage />} />
+            <Route path="/create-notes" element={<CreateNotes />} />
+            <Route path="/flashcards/*" element={<FlashcardsPage />} />
+            <Route path="/analytics" element={<AnalyticsPage />} />
+            <Route path="/tracker" element={<TrackerPage />} />
+            <Route path="/resume" element={<ResumePage />} />
+            <Route path="/resume/:resumeSqid" element={<ResumePage />} />
+            <Route path="/certificates" element={<CertificatesPage />} />
+            <Route path="/settings" element={<SettingsPage />} />
+            <Route path="/calendar" element={<Calender />} />
+          </Route>
+          <Route path="*" element={<Navigate to="/not-found" replace />} />
         </Routes>
       </main>
     </div>
@@ -80,7 +88,9 @@ function AppContent() {
 function App() {
   return (
     <BrowserRouter>
-      <AppContent />
+      <ToastProvider>
+        <AppContent />
+      </ToastProvider>
     </BrowserRouter>
   )
 }

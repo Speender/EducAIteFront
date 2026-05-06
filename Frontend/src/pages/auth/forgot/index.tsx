@@ -1,4 +1,3 @@
-import React from 'react';
 import ForgotHeader from './components/ForgotHeader';
 import ForgotForm from './components/ForgotForm';
 

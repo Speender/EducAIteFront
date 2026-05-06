@@ -1,5 +1,4 @@
-import React, { useState } from 'react'
-import logo from '../../../assets/educAIte-logo.svg'
+import { useState } from 'react'
 
 import template1 from '../../../assets/Resume1.svg'
 import template2 from '../../../assets/Resume2.svg'
@@ -17,7 +16,7 @@ import ResumeHistory from './ResumeHistory'
 const ResumeMain = () => {
   const [step, setStep] = useState(0);
 
-  if (step === 1) return <FirstResumeBuilder onBack={() => setStep(0)} onNext={() => setStep(2)} />;
+  if (step === 1) return <FirstResumeBuilder onNext={() => setStep(2)} />;
   if (step === 2) return <SecondResumeBuilder onBack={() => setStep(1)} onNext={() => setStep(3)} />;
   if (step === 3) return <ThirdResumeBuilder onBack={() => setStep(2)} onNext={() => setStep(4)} />;
   if (step === 4) return <FourthResumeBuilder onBack={() => setStep(3)} onNext={() => setStep(5)} />;

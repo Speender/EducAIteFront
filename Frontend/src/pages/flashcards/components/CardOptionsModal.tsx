@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface CardOptionsModalProps {
   onClose: () => void;
   onEdit: () => void;

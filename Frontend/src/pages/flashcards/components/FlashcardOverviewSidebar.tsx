@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface SidebarStats {
   totalDecks: number;
   totalFlashcards: number;
@@ -22,12 +20,12 @@ export default function FlashcardOverviewSidebar({ stats }: { stats: SidebarStat
   const strokeDashoffset = circumference - (stats.accuracy / 100) * circumference;
 
   return (
-    <aside className="w-[300px] border border-white/20 rounded-3xl p-6 font-sans shrink-0">
+    <aside className="w-full rounded-[32px] border border-white/10 bg-[#111111] p-6 font-sans shadow-[0_18px_40px_rgba(0,0,0,0.35)]">
       
-      <h2 className="text-xl font-bold text-white mb-8">Flashcard Overview</h2>
+      <h2 className="mb-6 text-xl font-bold text-white">Flashcard Overview</h2>
 
       {/* General Stats */}
-      <div className="space-y-4 mb-10 pl-2">
+      <div className="mb-8 space-y-3.5 pl-1">
         <div className="flex justify-between items-center text-sm">
           <span className="text-white/80">Total Decks:</span>
           <span className="text-white font-medium">{stats.totalDecks}</span>
@@ -47,7 +45,7 @@ export default function FlashcardOverviewSidebar({ stats }: { stats: SidebarStat
       </div>
 
       {/* Accuracy Rate Box */}
-      <div className="border border-white/20 rounded-2xl p-5 mb-6">
+      <div className="mb-5 rounded-[24px] border border-white/10 bg-black/30 p-5">
         <p className="text-sm font-bold text-white mb-4">
           <span className="text-[#00CEC8]">Accuracy</span> Rate
         </p>
@@ -77,7 +75,7 @@ export default function FlashcardOverviewSidebar({ stats }: { stats: SidebarStat
       </div>
 
       {/* Weekly Summary Box */}
-      <div className="border border-white/20 rounded-2xl p-5 flex flex-col">
+      <div className="flex flex-col rounded-[24px] border border-white/10 bg-black/30 p-5">
         <p className="text-sm font-bold text-white mb-4">
           <span className="text-[#00CEC8]">Weekly</span> Summary
         </p>
@@ -108,8 +106,8 @@ export default function FlashcardOverviewSidebar({ stats }: { stats: SidebarStat
         </div>
 
         {/* Placeholder for the Bar Graph */}
-        <div className="h-24 flex items-end justify-center pb-2">
-          <p className="text-white font-bold text-lg tracking-wide">Bar Graph</p>
+        <div className="flex h-20 items-end justify-center rounded-2xl border border-dashed border-white/10 bg-white/[0.02] pb-2">
+          <p className="text-base font-bold tracking-wide text-white/55">Bar Graph</p>
         </div>
       </div>
 

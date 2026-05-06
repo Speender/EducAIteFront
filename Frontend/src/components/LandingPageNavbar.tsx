@@ -36,7 +36,7 @@ const LandingPageNavbar = () => {
             key={item.name}
             href={item.path}
             onClick={(e) => handleScroll(e, item.path, item.name)}
-            className={`text-[15px] transition-colors cursor-pointer ${
+            className={`text-[15px] transition-colors cursor-pointer rounded-full px-1.5 py-1 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#00CEC8]/60 ${
               activeItem === item.name ? 'text-white font-bold' : 'text-gray-400 hover:text-white'
             }`}
           >

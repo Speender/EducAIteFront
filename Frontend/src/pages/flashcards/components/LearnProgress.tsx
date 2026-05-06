@@ -1,5 +1,3 @@
-import React from 'react';
-
 interface LearnProgressProps {
   current: number;
   total: number;

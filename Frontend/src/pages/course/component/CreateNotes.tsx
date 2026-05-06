@@ -5,7 +5,6 @@ import logo from '../../../assets/educAIte-logo.svg'
 const CreateNotes = () => {
   const navigate = useNavigate();
   const [title, setTitle] = useState("");
-  const [content, setContent] = useState("");
   
   const editorRef = useRef<HTMLDivElement>(null);
   
@@ -204,7 +203,6 @@ const CreateNotes = () => {
             <div 
               ref={editorRef}
               contentEditable
-              onInput={(e) => setContent(e.currentTarget.innerHTML)}
               data-placeholder="Start typing your notes..."
               className="bg-transparent w-full h-[50vh] outline-none text-xl leading-relaxed font-light overflow-y-auto empty:before:content-[attr(data-placeholder)] empty:before:text-white/5 [&_b]:font-bold [&_strong]:font-bold [&_i]:italic [&_em]:italic [&_u]:underline [&_ul]:list-disc [&_ul]:ml-6 [&_ul]:my-2 [&_li]:mb-1"
             />

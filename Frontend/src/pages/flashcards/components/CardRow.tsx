@@ -1,74 +1,124 @@
-import React, { useState } from 'react';
-import { CardOptionsModal } from './CardOptionsModal';
+import { Button } from "@/components/ui/button";
+import { Edit2Icon, Trash2Icon, ZapIcon, BookOpenIcon } from "lucide-react";
 
 interface CardRowProps {
   card: {
-    id: string;
+    sqid: string;
     question: string;
-    answer: string | string[];
+    answer: string;
+    conceptExplanation?: string;
+    answeringGuidance?: string;
+    acceptedAnswerAliases?: string[];
+    itemType?: string;
+    technicalLanguage?: string;
   };
+  onLearn?: () => void;
+  onChallenge?: () => void;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
-export function CardRow({ card }: CardRowProps) {
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const isMultipleChoice = Array.isArray(card.answer);
+const technicalItemTypes = new Set(["CodeReading", "Debugging", "Sql", "Algorithm", "OutputPrediction", "FillInCode"]);
+
+export function CardRow({ card, onLearn, onChallenge, onEdit, onDelete }: CardRowProps) {
+  const isTechnicalCard = technicalItemTypes.has(card.itemType ?? "");
 
   return (
-    <div className="relative border border-white/10 rounded-[32px] p-8 mb-6 
-                bg-white/[0.03] 
-                hover:bg-[#050505] 
-                hover:border-[#00CEC8]/30
-                transition-all duration-300 group shadow-sm cursor-pointer">
-      
-      {/* Three Dots Action Menu Button */}
-      <button 
-        onClick={() => setIsMenuOpen(!isMenuOpen)}
-        className="absolute top-6 right-8 text-white/30 hover:text-white transition-colors z-20 p-2"
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
-          <circle cx="5" cy="12" r="1.5"></circle>
-          <circle cx="12" cy="12" r="1.5"></circle>
-          <circle cx="19" cy="12" r="1.5"></circle>
-        </svg>
-      </button>
+    <div className="group relative flex flex-col h-full overflow-hidden rounded-2xl border border-white/[0.03] bg-white/[0.01] transition-all hover:border-primary/20 hover:bg-white/[0.02]">
+      <div className="flex flex-col flex-1 p-6 sm:p-8">
+        {/* Top Meta */}
+        <div className="mb-4 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            {card.itemType && (
+              <span className="rounded-md border border-primary/20 bg-primary/5 px-2 py-0.5 text-[8px] font-black uppercase tracking-widest text-primary">
+                {card.itemType}
+              </span>
+            )}
+            <span className="font-mono text-[8px] uppercase tracking-tighter text-white/5">
+              ID_{card.sqid.slice(0, 6)}
+            </span>
+          </div>
+          
+          <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            {onEdit && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onEdit}
+                className="h-7 w-7 rounded-md text-white/20 hover:bg-white/5 hover:text-white"
+              >
+                <Edit2Icon className="h-3.5 w-3.5" />
+              </Button>
+            )}
+            {onDelete && (
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={onDelete}
+                className="h-7 w-7 rounded-md text-white/20 hover:bg-rose-500/10 hover:text-rose-400"
+              >
+                <Trash2Icon className="h-3.5 w-3.5" />
+              </Button>
+            )}
+          </div>
+        </div>
 
-      {/* Options Modal - Appears relative to this card */}
-      {isMenuOpen && (
-        <CardOptionsModal 
-          onClose={() => setIsMenuOpen(false)}
-          onEdit={() => console.log("Edit card:", card.id)}
-          onDelete={() => console.log("Delete card:", card.id)}
-        />
-      )}
+        {/* Question Area */}
+        <div className="mb-6 flex-1">
+          <span className="mb-2 block text-[9px] font-black uppercase tracking-[0.2em] text-white/20">Prompt</span>
+          <h3 className="line-clamp-4 text-lg font-medium leading-snug text-white group-hover:text-primary/90 transition-colors">
+            {card.question}
+          </h3>
+        </div>
 
-      {/* Question / Front */}
-      <div className="mb-8 pr-16">
-        <p className="text-white/30 text-[13px] font-bold uppercase tracking-[0.15em] mb-3">Front</p>
-        <h3 className="text-[22px] text-white font-medium leading-relaxed">
-          {card.question}
-        </h3>
-      </div>
-
-      {/* Answer / Back */}
-      <div className="flex flex-col">
-        <p className="text-white/30 text-[13px] font-bold uppercase tracking-[0.15em] mb-3">Back</p>
-        <div className="inline-block self-start bg-transparent rounded-2xl px-6 py-3 border border-white/10">
-          {isMultipleChoice ? (
-            <div className="flex flex-col gap-1">
-              {(card.answer as string[]).map((ans, i) => (
-                <span key={i} className="text-[#00CEC8] text-[18px] font-semibold tracking-tight">
-                  {ans}
-                </span>
-              ))}
-            </div>
-          ) : (
-            <span className="text-[#00CEC8] text-[18px] font-semibold tracking-tight">
+        {/* Answer Area */}
+        <div className="mb-6">
+          <span className="mb-2 block text-[9px] font-black uppercase tracking-[0.2em] text-white/20">Target</span>
+          <div className="rounded-lg border border-white/[0.03] bg-black/20 p-3">
+            <span className="line-clamp-2 text-base font-bold tracking-tight text-primary">
               {card.answer}
             </span>
-          )}
+          </div>
         </div>
+
+        {/* Protocol/Guidance Snippet */}
+        {(card.answeringGuidance || card.acceptedAnswerAliases?.length) && (
+          <div className="border-t border-white/[0.02] pt-4 mt-auto">
+            <p className="line-clamp-2 text-[11px] leading-relaxed text-white/30">
+              {card.answeringGuidance || card.acceptedAnswerAliases?.join(', ')}
+            </p>
+          </div>
+        )}
       </div>
-      
+
+      {/* Action Footer */}
+      <div className="border-t border-white/[0.03] bg-white/[0.01] p-4 flex gap-2">
+        {onLearn && (
+          <Button
+            size="sm"
+            onClick={onLearn}
+            className="flex-1 h-9 rounded-lg bg-white text-[10px] font-black uppercase tracking-widest text-black hover:bg-white/90"
+          >
+            <BookOpenIcon className="mr-2 h-3 w-3" />
+            Learn
+          </Button>
+        )}
+        {isTechnicalCard && onChallenge && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={onChallenge}
+            className="flex-1 h-9 rounded-lg border-primary/20 bg-primary/5 text-[10px] font-black uppercase tracking-widest text-primary hover:bg-primary/10"
+          >
+            <ZapIcon className="mr-2 h-3 w-3" />
+            Test
+          </Button>
+        )}
+      </div>
     </div>
   );
 }
+
+
+
+

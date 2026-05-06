@@ -1,63 +1,90 @@
-import React from 'react'
+import type { StudentAnalyticsDashboardResponseDto } from '@/features/student-performance/api/dto'
 
-const OverallPerformance = () => {
+interface OverallPerformanceProps {
+  overallPerformance: StudentAnalyticsDashboardResponseDto['overallPerformance'];
+  totalStudyHours: number;
+}
+
+const OverallPerformance = ({ overallPerformance, totalStudyHours }: OverallPerformanceProps) => {
+  const progressItems = [
+    { label: 'Overall mastery', value: overallPerformance.overallPerformanceScore },
+    { label: 'Flashcard accuracy', value: overallPerformance.flashcardAccuracyRate },
+    { label: 'Retention', value: overallPerformance.learningRetentionRate },
+    { label: 'Confidence', value: overallPerformance.confidenceScore },
+  ]
+
   return (
-    <div className="border border-white/20 rounded-[32px] p-6 flex flex-col">
-      <h3 className="font-bold mb-6 text-sm"><span className="text-[#00CEC8]">Overall</span> Performance</h3>
-      
-      {/* Stats List */}
-      <div className="space-y-4 mb-10 text-xs text-white/80">
-        <div className="flex justify-between items-center">
-          <span>Total Mastery:</span> 
-          <span className="font-bold text-white text-sm">82% <span className="text-green-500 text-[10px] ml-1">&uarr;+5%</span></span>
+    <div className="flex flex-col rounded-[32px] border border-white/20 p-6">
+      <h3 className="mb-6 text-sm font-bold">
+        <span className="text-[#00CEC8]">Overall</span> Performance
+      </h3>
+
+      <div className="mb-10 space-y-4 text-xs text-white/80">
+        <div className="flex items-center justify-between">
+          <span>Total Mastery:</span>
+          <span className="text-sm font-bold text-white">{formatPercent(overallPerformance.overallPerformanceScore)}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span>Study Hours:</span> <span className="font-bold text-white text-sm">13.4 / 15</span>
+        <div className="flex items-center justify-between">
+          <span>Study Hours:</span>
+          <span className="text-sm font-bold text-white">{totalStudyHours.toFixed(1)}h</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span>Flashcard Accuracy:</span> <span className="font-bold text-white text-sm">84%</span>
+        <div className="flex items-center justify-between">
+          <span>Flashcard Accuracy:</span>
+          <span className="text-sm font-bold text-white">{formatPercent(overallPerformance.flashcardAccuracyRate)}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span>Task Completed:</span> <span className="font-bold text-white text-sm">12 / 15</span>
+        <div className="flex items-center justify-between">
+          <span>Tracked Flashcards:</span>
+          <span className="text-sm font-bold text-white">{overallPerformance.trackedFlashcardsCount}</span>
         </div>
-        <div className="flex justify-between items-center">
-          <span>Study Streak:</span> <span className="font-bold text-[#00CEC8] text-sm">13 Days</span>
+        <div className="flex items-center justify-between">
+          <span>Mastered Flashcards:</span>
+          <span className="text-sm font-bold text-[#00CEC8]">{overallPerformance.masteredFlashcardsCount}</span>
         </div>
       </div>
 
-      <h3 className="font-bold text-[#00CEC8] mb-4 text-xs">Progressive Overview:</h3>
-      
-      {/* Mini Progress Bars */}
-      <div className="space-y-4 mb-10">
-        <div>
-          <div className="flex justify-between text-[10px] mb-1 font-medium"><span>Mastery</span><span>82%</span></div>
-          <div className="h-2.5 bg-white/20 rounded-full"><div className="h-full bg-white rounded-full w-[82%]"></div></div>
-        </div>
-        <div>
-          <div className="flex justify-between text-[10px] mb-1 font-medium"><span>Study Time Goal</span><span>8h9%</span></div>
-          <div className="h-2.5 bg-white/20 rounded-full"><div className="h-full bg-white rounded-full w-[65%]"></div></div>
-        </div>
-        <div>
-          <div className="flex justify-between text-[10px] mb-1 font-medium"><span>Flashcards</span><span>84%</span></div>
-          <div className="h-2.5 bg-white/20 rounded-full"><div className="h-full bg-white rounded-full w-[84%]"></div></div>
-        </div>
-        <div>
-          <div className="flex justify-between text-[10px] mb-1 font-medium"><span>Tasks</span><span>80%</span></div>
-          <div className="h-2.5 bg-white/20 rounded-full"><div className="h-full bg-white rounded-full w-[80%]"></div></div>
-        </div>
+      <h3 className="mb-4 text-xs font-bold text-[#00CEC8]">Progressive Overview:</h3>
+
+      <div className="mb-10 space-y-4">
+        {progressItems.map((item) => (
+          <div key={item.label}>
+            <div className="mb-1 flex justify-between text-[10px] font-medium">
+              <span>{item.label}</span>
+              <span>{formatPercent(item.value)}</span>
+            </div>
+            <div className="h-2.5 rounded-full bg-white/20">
+              <div
+                className="h-full rounded-full bg-white"
+                style={{ width: `${Math.max(0, Math.min(item.value, 100))}%` }}
+              />
+            </div>
+          </div>
+        ))}
       </div>
 
-      <h3 className="font-bold text-[#00CEC8] mb-2 text-xs">AI Insight:</h3>
-      <p className="text-[10px] text-white/70 mb-8 leading-relaxed pr-4">
-        You're strongest in Theoretical subjects (88%). Focus on Practical courses to balance mastery.
+      <h3 className="mb-2 text-xs font-bold text-[#00CEC8]">AI Insight:</h3>
+      <p className="mb-8 pr-4 text-[10px] leading-relaxed text-white/70">
+        {overallPerformance.aiInsight || 'Your AI summary will appear here once enough performance signal has been collected.'}
       </p>
 
-      <div className="mt-auto space-y-2 flex flex-col items-start">
-        <span className="bg-white/10 text-[10px] font-bold px-3 py-1.5 rounded-md">Consistent Performer</span>
-        <span className="bg-white/10 text-[10px] font-bold px-3 py-1.5 rounded-md">Bro is cooking</span>
+      <div className="mt-auto flex flex-col items-start space-y-2">
+        <span className="rounded-md bg-white/10 px-3 py-1.5 text-[10px] font-bold">
+          Risk: {overallPerformance.riskLevel}
+        </span>
+        <span className="rounded-md bg-white/10 px-3 py-1.5 text-[10px] font-bold">
+          AI Status: {overallPerformance.aiStatus}
+        </span>
+        {overallPerformance.improvementSuggestion ? (
+          <span className="rounded-md bg-[#00CEC8]/10 px-3 py-1.5 text-[10px] font-bold text-[#8af8f4]">
+            Next step: {overallPerformance.improvementSuggestion}
+          </span>
+        ) : null}
       </div>
     </div>
   )
 }
 
 export default OverallPerformance
+
+function formatPercent(value: number): string {
+  return `${value.toFixed(1)}%`
+}

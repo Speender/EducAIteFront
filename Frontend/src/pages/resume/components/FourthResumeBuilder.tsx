@@ -1,4 +1,3 @@
-import React from 'react'
 import robotIcon from '../../../assets/robot.svg';
 
 interface FourthResumeBuilderProps {

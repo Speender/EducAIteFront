@@ -1,5 +1,3 @@
-import React from 'react';
-
 export function CardMenu() {
   return (
     <div className="space-y-4 w-full">

@@ -1,4 +1,4 @@
-import React, { useState } from 'react'; // 1. Added useState
+import { useState } from 'react'; // 1. Added useState
 import { useNavigate } from 'react-router-dom';
 import logo from '../../../assets/educAIte-logo.svg';
 import AImpatin from '../../../assets/robot.svg';

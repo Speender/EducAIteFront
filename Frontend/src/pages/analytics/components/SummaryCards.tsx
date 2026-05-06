@@ -1,19 +1,27 @@
-import React from 'react'
+interface SummaryCardsProps {
+  trackedFlashcardsCount: number;
+  totalStudyHours: number;
+  trackedCoursesCount: number;
+}
 
-const SummaryCards = () => {
+const SummaryCards = ({
+  trackedFlashcardsCount,
+  totalStudyHours,
+  trackedCoursesCount,
+}: SummaryCardsProps) => {
   return (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <div className="border border-white/20 rounded-2xl p-6">
-        <h3 className="text-[#00CEC8] text-4xl font-bold mb-1">125</h3>
-        <p className="text-white text-lg">Total Sessions</p>
+    <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+      <div className="rounded-2xl border border-white/20 p-6">
+        <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{trackedFlashcardsCount}</h3>
+        <p className="text-lg text-white">Tracked Flashcards</p>
       </div>
-      <div className="border border-white/20 rounded-2xl p-6">
-        <h3 className="text-[#00CEC8] text-4xl font-bold mb-1">100h</h3>
-        <p className="text-white text-lg">Total Hours</p>
+      <div className="rounded-2xl border border-white/20 p-6">
+        <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{totalStudyHours.toFixed(1)}h</h3>
+        <p className="text-lg text-white">Total Hours</p>
       </div>
-      <div className="border border-white/20 rounded-2xl p-6">
-        <h3 className="text-[#00CEC8] text-4xl font-bold mb-1">6</h3>
-        <p className="text-white text-lg">Subjects</p>
+      <div className="rounded-2xl border border-white/20 p-6">
+        <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{trackedCoursesCount}</h3>
+        <p className="text-lg text-white">Subjects</p>
       </div>
     </div>
   )
