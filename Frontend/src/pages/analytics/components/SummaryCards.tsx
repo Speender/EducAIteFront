@@ -1,3 +1,5 @@
+import { formatStudyDuration } from '../lib/formatStudyDuration'
+
 interface SummaryCardsProps {
   trackedFlashcardsCount: number;
   totalStudyHours: number;
@@ -16,8 +18,8 @@ const SummaryCards = ({
         <p className="text-lg text-white">Tracked Flashcards</p>
       </div>
       <div className="rounded-2xl border border-white/20 p-6">
-        <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{totalStudyHours.toFixed(1)}h</h3>
-        <p className="text-lg text-white">Total Hours</p>
+        <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{formatStudyDuration(totalStudyHours)}</h3>
+        <p className="text-lg text-white">Total Study Time</p>
       </div>
       <div className="rounded-2xl border border-white/20 p-6">
         <h3 className="mb-1 text-4xl font-bold text-[#00CEC8]">{trackedCoursesCount}</h3>

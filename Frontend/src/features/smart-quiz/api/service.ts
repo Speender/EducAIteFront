@@ -6,6 +6,7 @@ import {
   generateQuizItemsPreviewRequestDtoSchema,
   generateQuizItemsPreviewResponseDtoSchema,
   generateQuizItemsResponseDtoSchema,
+  quizGenerationJobDtoSchema,
   quizItemDtoSchema,
   quizSessionDtoSchema,
   quizSessionNextItemDtoSchema,
@@ -26,14 +27,27 @@ export async function getQuizItemsByDeck(deckSqid: string) {
   return quizItemDtoSchema.array().parse(data);
 }
 
-export async function generateQuizItemsPreview(deckSqid: string, payload: GenerateQuizItemsPreviewRequestDto) {
+export async function generateQuizItemsPreview(_deckSqid: string, payload: GenerateQuizItemsPreviewRequestDto) {
   const parsedPayload = generateQuizItemsPreviewRequestDtoSchema.parse(payload);
   const { data } = await apiClient.post(
-    `/decks/${encodeURIComponent(deckSqid)}/quiz-items/generate-preview`,
+    "/smart-quiz/items/generate-preview",
     toGenerateQuizItemsRequest(parsedPayload),
   );
 
   return generateQuizItemsPreviewResponseDtoSchema.parse(data);
+}
+
+export async function getQuizGenerationJob(generationJobSqid: string) {
+  const { data } = await apiClient.get(`/smart-quiz/generation-jobs/${encodeURIComponent(generationJobSqid)}`);
+  return quizGenerationJobDtoSchema.parse(data);
+}
+
+export async function retryQuizGenerationHydration(generationJobSqid: string) {
+  const { data } = await apiClient.post(
+    `/smart-quiz/generation-jobs/${encodeURIComponent(generationJobSqid)}/retry-hydration`,
+  );
+
+  return quizGenerationJobDtoSchema.parse(data);
 }
 
 export async function generateAndSaveQuizItems(deckSqid: string, payload: GenerateQuizItemsPreviewRequestDto) {

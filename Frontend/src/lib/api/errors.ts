@@ -1,4 +1,5 @@
 import axios from "axios";
+import { ZodError } from "zod";
 
 export type ApiFieldErrors = Record<string, string[]>;
 
@@ -20,6 +21,14 @@ export function normalizeApiError(error: unknown): NormalizedApiError {
       code: extractCode(payload, error.code, status),
       message: extractMessage(payload) ?? error.message ?? "Something went wrong.",
       ...(fieldErrors ? { fieldErrors } : {}),
+    };
+  }
+
+  if (error instanceof ZodError) {
+    return {
+      status: 500,
+      code: "RESPONSE_SCHEMA_ERROR",
+      message: "The server responded, but the app could not read the latest result. Please refresh the page.",
     };
   }
 
@@ -72,14 +81,15 @@ function extractMessage(payload: unknown): string | null {
     return error;
   }
 
+  const debugMessage = (payload as { debugMessage?: unknown }).debugMessage;
+  const upstreamMessage = extractEmbeddedJsonMessage(debugMessage);
+  if (upstreamMessage) {
+    return upstreamMessage;
+  }
+
   const detail = (payload as { detail?: unknown }).detail;
   if (typeof detail === "string" && detail.trim()) {
     return detail;
-  }
-
-  const debugMessage = (payload as { debugMessage?: unknown }).debugMessage;
-  if (typeof debugMessage === "string" && debugMessage.trim()) {
-    return debugMessage;
   }
 
   const title = (payload as { title?: unknown }).title;
@@ -88,6 +98,25 @@ function extractMessage(payload: unknown): string | null {
   }
 
   return null;
+}
+
+function extractEmbeddedJsonMessage(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+
+  const startIndex = value.indexOf("{");
+  const endIndex = value.lastIndexOf("}");
+  if (startIndex < 0 || endIndex <= startIndex) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(value.slice(startIndex, endIndex + 1)) as { message?: unknown };
+    return typeof parsed.message === "string" && parsed.message.trim() ? parsed.message : null;
+  } catch {
+    return null;
+  }
 }
 
 function extractFieldErrors(payload: unknown): ApiFieldErrors | undefined {

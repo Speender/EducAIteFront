@@ -1,29 +1,20 @@
-import React, { useEffect } from 'react';
+import React from 'react';
 
 import EarthBg from '../../assets/earthbg.svg';
 import Logo from '../../components/Logo';
 import robotImg from '../../assets/robot.svg';
-import { useCurrentStudentQuery } from '@/features/auth/api/hooks';
-import { getAuthSession, syncAuthSessionStudent } from '@/lib/api/auth';
+import { useStudentDashboardQuery } from '@/features/dashboard/api/hooks';
+import { getAuthSession } from '@/lib/api/auth';
 
 import BentoCards from './components/BentoCards';
 import DashboardHeader from './components/DashboardHeader';
 
 const MainPage: React.FC = () => {
   const session = getAuthSession();
-  const currentStudentQuery = useCurrentStudentQuery({
-    staleTime: 0,
-    refetchOnMount: 'always',
-  });
-
-  useEffect(() => {
-    if (currentStudentQuery.data) {
-      syncAuthSessionStudent(currentStudentQuery.data);
-    }
-  }, [currentStudentQuery.data]);
+  const dashboardQuery = useStudentDashboardQuery();
 
   const studentFirstName =
-    currentStudentQuery.data?.firstName ??
+    dashboardQuery.data?.student.firstName ??
     session?.student.firstName ??
     'Student';
 
@@ -34,9 +25,15 @@ const MainPage: React.FC = () => {
       <main className="relative z-10 mx-auto flex max-w-[1280px] flex-col items-center px-6 pt-32">
         <DashboardHeader
           studentFirstName={studentFirstName}
-          isLoading={currentStudentQuery.isPending}
+          isLoading={dashboardQuery.isPending}
         />
-        <BentoCards />
+        <BentoCards
+          dashboard={dashboardQuery.data}
+          error={dashboardQuery.error}
+          isError={dashboardQuery.isError}
+          isLoading={dashboardQuery.isPending}
+          onRetry={() => void dashboardQuery.refetch()}
+        />
       </main>
 
       <img

@@ -7,7 +7,7 @@ interface Props {
 const Header = ({ name, semester }: Props) => {
     return (
         <div className="flex flex-col min-w-0">
-            <h1 className="text-4xl md:text-[2.75rem] font-bold tracking-tight text-white mb-2">
+            <h1 className="text-4xl md:text-[2.75rem] font-bold text-white mb-2">
                 Hey, <span className="text-[#00CEC8]">{name}</span> 👋
             </h1>
             <h2 className="text-white/50 text-lg font-medium">

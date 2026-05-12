@@ -4,7 +4,9 @@ import Navbar from './components/Navbar'
 import EducAIteAssistantRobot from './components/EducAIteAssistantRobot'
 import ProtectedRoute from './components/ProtectedRoute'
 import { ToastProvider } from './components/ToastProvider'
+import { Toaster } from './components/ui/toaster'
 import { isAuthenticated } from './lib/api/auth'
+import { FlashcardGenerationToastController } from './pages/flashcards/components/FlashcardGenerationToastController'
 
 import LandingPage from './pages/landing'
 import Main from './pages/main'
@@ -52,6 +54,7 @@ function AppContent() {
         <>
           <Navbar />
           <EducAIteAssistantRobot />
+          <FlashcardGenerationToastController />
         </>
       )}
       <main>
@@ -90,6 +93,7 @@ function App() {
     <BrowserRouter>
       <ToastProvider>
         <AppContent />
+        <Toaster />
       </ToastProvider>
     </BrowserRouter>
   )

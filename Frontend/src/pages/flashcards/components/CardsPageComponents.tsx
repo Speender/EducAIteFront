@@ -1,4 +1,4 @@
-import { Search, Plus, Play, Sparkles } from "lucide-react";
+import { Files, Search, Plus, Play, Sparkles } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,8 @@ interface CardsPageHeaderProps {
   count: number;
   onStartReview: () => void;
   onAddCard: () => void;
+  onOpenRequestCenter?: () => void;
+  requestCount?: number;
   isReviewLoading?: boolean;
   isDataLoading?: boolean;
 }
@@ -21,6 +23,8 @@ export function CardsPageHeader({
   count,
   onStartReview,
   onAddCard,
+  onOpenRequestCenter,
+  requestCount = 0,
   isReviewLoading,
   isDataLoading,
 }: CardsPageHeaderProps) {
@@ -39,6 +43,21 @@ export function CardsPageHeader({
       </div>
 
       <div className="flex flex-wrap items-center gap-2">
+        {onOpenRequestCenter ? (
+          <Button
+            type="button"
+            onClick={onOpenRequestCenter}
+            variant="outline"
+            size="default"
+            className="border-white/10 bg-zinc-950 text-white hover:bg-white/5"
+          >
+            <Files data-icon="inline-start" />
+            Request Center
+            <span className="rounded-full bg-white/10 px-2 py-0.5 text-xs text-white/75">
+              {requestCount}
+            </span>
+          </Button>
+        ) : null}
         <Button
           type="button"
           onClick={onStartReview}

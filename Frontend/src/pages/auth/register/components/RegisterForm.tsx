@@ -3,17 +3,21 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router-dom';
 
+import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { useToast } from '@/components/ToastProvider';
 import { useRegisterWithStudyLoadMutation } from '@/features/onboarding/api/hooks';
 import {
   registerWithStudyLoadFormSchema,
   type RegisterWithStudyLoadFormInput,
   type RegisterWithStudyLoadFormValues,
+  type RegistrationStudyLoadPreviewResponseDto,
 } from '@/features/onboarding/api/dto';
 import { getErrorMessage } from '@/lib/api/errors';
 
 interface RegisterFormProps {
   selectedFile: File | null;
+  reviewedStudyLoad: RegistrationStudyLoadPreviewResponseDto | null;
   onMissingFile: (message: string) => void;
   onFileAccepted: () => void;
 }
@@ -21,13 +25,19 @@ interface RegisterFormProps {
 const inputClassName =
   'w-full px-5 py-4 border border-white/20 rounded-xl text-[0.95rem] text-white bg-black outline-none transition-all placeholder:text-white/30 focus:border-[#00CEC8] focus:shadow-[0_0_0_3px_rgba(0,206,200,0.08)]';
 
-const RegisterForm: React.FC<RegisterFormProps> = ({ selectedFile, onMissingFile, onFileAccepted }) => {
+const RegisterForm: React.FC<RegisterFormProps> = ({
+  selectedFile,
+  reviewedStudyLoad,
+  onMissingFile,
+  onFileAccepted,
+}) => {
   const navigate = useNavigate();
-  const { showSuccess } = useToast();
+  const { showSuccess, showError } = useToast();
   const registerMutation = useRegisterWithStudyLoadMutation();
   const {
     register,
     handleSubmit,
+    setValue,
     formState: { errors },
   } = useForm<RegisterWithStudyLoadFormInput, undefined, RegisterWithStudyLoadFormValues>({
     resolver: zodResolver(registerWithStudyLoadFormSchema),
@@ -39,9 +49,31 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ selectedFile, onMissingFile
       email: '',
       password: '',
       confirmPassword: '',
-      expiresInMinutes: 60,
     },
   });
+
+  React.useEffect(() => {
+    if (!reviewedStudyLoad) {
+      return;
+    }
+
+    const suggestedStudent = reviewedStudyLoad.suggestedStudent;
+    if (suggestedStudent.firstName.trim()) {
+      setValue('firstName', suggestedStudent.firstName.trim(), { shouldDirty: true, shouldValidate: true });
+    }
+
+    if (suggestedStudent.middleName.trim()) {
+      setValue('middleName', suggestedStudent.middleName.trim(), { shouldDirty: true, shouldValidate: true });
+    }
+
+    if (suggestedStudent.lastName.trim()) {
+      setValue('lastName', suggestedStudent.lastName.trim(), { shouldDirty: true, shouldValidate: true });
+    }
+
+    if (suggestedStudent.studentIdNumber.trim()) {
+      setValue('studentIdNumber', suggestedStudent.studentIdNumber.trim(), { shouldDirty: true, shouldValidate: true });
+    }
+  }, [reviewedStudyLoad, setValue]);
 
   const handleRegister = handleSubmit(async (values) => {
     if (!selectedFile) {
@@ -51,99 +83,99 @@ const RegisterForm: React.FC<RegisterFormProps> = ({ selectedFile, onMissingFile
 
     onFileAccepted();
 
-    await registerMutation.mutateAsync({
-      values,
-      studyLoadDocument: selectedFile,
-    });
+    try {
+      await registerMutation.mutateAsync({
+        values,
+        studyLoadDocument: selectedFile,
+        reviewedStudyLoad,
+      });
 
-    showSuccess('Account created successfully.');
-    navigate('/main', {
-      replace: true,
-    });
+      showSuccess('Account created successfully. Your study load was saved.');
+      navigate('/main', {
+        replace: true,
+      });
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
   });
 
   return (
     <div className="w-full max-w-[500px] md:max-w-[560px] bg-[#111111] text-white rounded-3xl border border-white/10 p-12 shadow-[0_8px_30px_rgba(0,0,0,0.5)] mx-auto order-1 md:order-2">
-      <h2 className="text-[1.75rem] font-bold text-white text-center mb-10 tracking-tight">
-        Registration
-      </h2>
-      
-      <form onSubmit={handleRegister} className="flex flex-col gap-5">
-        <div className="grid grid-cols-2 gap-5">
-          <FormField
-            label="First name"
-            placeholder="First name"
-            error={errors.firstName?.message}
-            input={<input {...register('firstName')} className={inputClassName} placeholder="First name" />}
-          />
-          <FormField
-            label="Middle name"
-            optional
-            placeholder="Middle name"
-            error={errors.middleName?.message}
-            input={<input {...register('middleName')} className={inputClassName} placeholder="Middle name" />}
-          />
-          <FormField
-            label="Last name"
-            placeholder="Last name"
-            error={errors.lastName?.message}
-            input={<input {...register('lastName')} className={inputClassName} placeholder="Last name" />}
-          />
-          <FormField
-            label="School ID"
-            placeholder="2024-00001"
-            error={errors.studentIdNumber?.message}
-            input={<input {...register('studentIdNumber')} className={inputClassName} placeholder="2024-00001" />}
-          />
-        </div>
+        <h2 className="text-[1.75rem] font-bold text-white text-center mb-10 tracking-tight">
+          Registration
+        </h2>
 
-        <div className="grid grid-cols-2 gap-5">
+        <form onSubmit={handleRegister} className="flex flex-col gap-5">
+          <div className="grid grid-cols-2 gap-5">
+            <FormField
+              label="First name"
+              placeholder="First name"
+              error={errors.firstName?.message}
+              input={<input {...register('firstName')} className={inputClassName} placeholder="First name" />}
+            />
+            <FormField
+              label="Middle name"
+              optional
+              placeholder="Middle name"
+              error={errors.middleName?.message}
+              input={<input {...register('middleName')} className={inputClassName} placeholder="Middle name" />}
+            />
+            <FormField
+              label="Last name"
+              placeholder="Last name"
+              error={errors.lastName?.message}
+              input={<input {...register('lastName')} className={inputClassName} placeholder="Last name" />}
+            />
+            <FormField
+              label="School ID"
+              placeholder="2024-00001"
+              error={errors.studentIdNumber?.message}
+              input={<input {...register('studentIdNumber')} className={inputClassName} placeholder="2024-00001" />}
+            />
+          </div>
+
           <FormField
             label="Email"
             placeholder="you@school.edu"
             error={errors.email?.message}
             input={<input {...register('email')} type="email" className={inputClassName} placeholder="you@school.edu" />}
           />
-          <FormField
-            label="Link expiry (minutes)"
-            placeholder="60"
-            error={errors.expiresInMinutes?.message}
-            input={<input {...register('expiresInMinutes', { valueAsNumber: true })} type="number" min={1} max={1440} className={inputClassName} placeholder="60" />}
-          />
-        </div>
 
-        <div className="grid grid-cols-2 gap-5">
-          <FormField
-            label="Password"
-            placeholder="Password"
-            error={errors.password?.message}
-            input={<input {...register('password')} type="password" className={inputClassName} placeholder="Password" />}
-          />
-          <FormField
-            label="Confirm password"
-            placeholder="Confirm password"
-            error={errors.confirmPassword?.message}
-            input={<input {...register('confirmPassword')} type="password" className={inputClassName} placeholder="Confirm password" />}
-          />
-        </div>
+          <div className="grid grid-cols-2 gap-5">
+            <FormField
+              label="Password"
+              placeholder="Password"
+              error={errors.password?.message}
+              input={<input {...register('password')} type="password" className={inputClassName} placeholder="Password" />}
+            />
+            <FormField
+              label="Confirm password"
+              placeholder="Confirm password"
+              error={errors.confirmPassword?.message}
+              input={<input {...register('confirmPassword')} type="password" className={inputClassName} placeholder="Confirm password" />}
+            />
+          </div>
 
-        <div className="rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm text-white/60">
-          Your course, semester, and studyload courses will be parsed from the uploaded PDF during onboarding.
-        </div>
+          <div className="rounded-2xl border border-white/10 bg-black/60 px-4 py-3 text-sm text-white/60">
+            {reviewedStudyLoad
+              ? `${reviewedStudyLoad.parseResult.parsedCourses.length} reviewed course${reviewedStudyLoad.parseResult.parsedCourses.length === 1 ? '' : 's'} will be saved after registration.`
+              : 'Upload your studyload PDF first. Parsed details can be reviewed before registration.'}
+          </div>
 
-        {registerMutation.isError ? (
-          <p className="text-sm text-rose-300">{getErrorMessage(registerMutation.error)}</p>
-        ) : null}
+          {registerMutation.isError ? (
+            <p className="text-sm text-rose-300">{getErrorMessage(registerMutation.error)}</p>
+          ) : null}
 
-        <button 
-          type="submit" 
-          disabled={registerMutation.isPending}
-          className="w-full py-4 mt-4 bg-white text-black rounded-xl text-lg font-bold transition-all shadow-[0_6px_20px_rgba(255,255,255,0.1)] hover:shadow-[0_8px_25px_rgba(255,255,255,0.15)] active:translate-y-0 hover:-translate-y-[1px]"
-        >
-          {registerMutation.isPending ? 'Creating your account...' : 'Register'}
-        </button>
-      </form>
-    </div>
+          <Button
+            type="submit"
+            disabled={registerMutation.isPending}
+            className="mt-4 h-auto w-full rounded-xl bg-white py-4 text-lg font-bold text-black shadow-[0_6px_20px_rgba(255,255,255,0.1)] transition-all hover:-translate-y-[1px] hover:bg-white hover:shadow-[0_8px_25px_rgba(255,255,255,0.15)] active:translate-y-0"
+          >
+            {registerMutation.isPending ? <Spinner data-icon="inline-start" /> : null}
+            {registerMutation.isPending ? 'Creating your account...' : 'Register'}
+          </Button>
+        </form>
+      </div>
   );
 };
 

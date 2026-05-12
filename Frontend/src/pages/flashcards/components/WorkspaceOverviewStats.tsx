@@ -41,7 +41,7 @@ export function WorkspaceOverviewStats({ totals }: WorkspaceOverviewStatsProps) 
         <CardContent className="grid gap-3 md:grid-cols-3">
           <InsightTile title="Deck layer" description="Create or open a major deck from the workspace grid." />
           <InsightTile title="Subdeck layer" description="Add focused subdecks for notes, documents, or AI-generated content." />
-          <InsightTile title="Quiz layer" description={`${totals.quizItems} saved quiz items are currently available for adaptive sessions.`} />
+          <InsightTile title="Practice layer" description={`${totals.quizItems} saved practice items are currently available for adaptive sessions.`} />
         </CardContent>
       </Card>
     </div>

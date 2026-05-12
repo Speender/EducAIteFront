@@ -1,5 +1,11 @@
 import type { ExecuteFlashcardCodeResponseDto } from "@/features/flashcards/api/dto";
 
+export type ToneClasses = {
+  border: string;
+  background: string;
+  badge: string;
+};
+
 export const technicalItemTypes = new Set([
   "CodeReading",
   "Debugging",
@@ -67,6 +73,19 @@ export function normalizeItemType(value: string) {
 
 export function formatItemTypeLabel(itemType: string) {
   return normalizeItemType(itemType).replace(/([a-z])([A-Z])/g, "$1 $2");
+}
+
+export function getReviewToneClasses(tone: string): ToneClasses {
+  switch (tone) {
+    case "correct":
+      return { border: "border-emerald-500/20", background: "bg-emerald-500/[0.03]", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
+    case "close":
+      return { border: "border-sky-500/20", background: "bg-sky-500/[0.03]", badge: "bg-sky-500/10 text-sky-300 border-sky-500/20" };
+    case "partial":
+      return { border: "border-amber-500/20", background: "bg-amber-500/[0.03]", badge: "bg-amber-500/10 text-amber-400 border-amber-500/20" };
+    default:
+      return { border: "border-rose-500/20", background: "bg-rose-500/[0.03]", badge: "bg-rose-500/10 text-rose-400 border-rose-500/20" };
+  }
 }
 
 export function parseJsonObject(value?: string): JsonRecord {

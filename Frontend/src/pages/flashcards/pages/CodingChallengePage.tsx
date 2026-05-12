@@ -344,7 +344,9 @@ function ChallengeDescription({ flashcard, tests }: { flashcard: FlashcardRespon
       ) : null}
       {tests.slice(0, 2).map((test, index) => (
         <div key={index} className="mb-4">
-          <div className="mb-2 font-medium text-white/90">Example {index + 1}:</div>
+          <div className="mb-2 font-medium text-white/90">
+            Example {index + 1}: {readTestCaseName(test, index)}
+          </div>
           <pre className="overflow-x-auto rounded-xl border border-white/10 bg-[#202023] p-5 font-mono text-[13px] leading-relaxed text-white/80">
             {formatTestCase(test)}
           </pre>
@@ -393,7 +395,7 @@ function ExecutionWorkspacePanel({
           tests.map((test, index) => (
             <div key={index} className="rounded-[1.5rem] border border-white/10 bg-black/20 p-4 text-white/80">
               <div className="mb-3 flex items-center justify-between gap-3">
-                <div className="font-sans text-sm font-medium text-white">Testcase {index + 1}</div>
+                <div className="font-sans text-sm font-medium text-white">{readTestCaseName(test, index)}</div>
                 {executionResult?.results[index] ? (
                   <span
                     className={cn(
@@ -648,6 +650,10 @@ function readRecordArray(source: JsonRecord, keys: string[]): JsonRecord[] {
   }
 
   return [];
+}
+
+function readTestCaseName(test: JsonRecord, index: number) {
+  return readString(test, ["name", "label"]) || `Test ${index + 1}`;
 }
 
 function readLimits(source: JsonRecord) {

@@ -4,6 +4,8 @@ import { Bar } from 'react-chartjs-2'
 
 import type { StudentAnalyticsDashboardResponseDto } from '@/features/student-performance/api/dto'
 
+import { formatStudyDuration } from '../lib/formatStudyDuration'
+
 ChartJS.register(CategoryScale, LinearScale, BarElement, Tooltip)
 
 interface LearningTrendAnalysisProps {
@@ -15,7 +17,7 @@ const LearningTrendAnalysis = ({ items }: LearningTrendAnalysisProps) => {
     labels: items.map((item) => item.courseName),
     datasets: [
       {
-        label: 'Hours Studied',
+        label: 'Study Time',
         data: items.map((item) => item.studyTimeHours),
         backgroundColor: '#00CEC8',
         borderRadius: 25,
@@ -35,6 +37,9 @@ const LearningTrendAnalysis = ({ items }: LearningTrendAnalysisProps) => {
         bodyColor: '#fff',
         borderColor: 'rgba(255,255,255,0.1)',
         borderWidth: 1,
+        callbacks: {
+          label: (context) => `Study time: ${formatStudyDuration(Number(context.parsed.y ?? 0))}`,
+        },
       },
     },
     scales: {
@@ -44,7 +49,10 @@ const LearningTrendAnalysis = ({ items }: LearningTrendAnalysisProps) => {
       },
       y: {
         grid: { color: 'rgba(255, 255, 255, 0.05)' },
-        ticks: { color: 'rgba(255, 255, 255, 0.5)' },
+        ticks: {
+          color: 'rgba(255, 255, 255, 0.5)',
+          callback: (value) => formatStudyDuration(Number(value)),
+        },
       },
     },
   }

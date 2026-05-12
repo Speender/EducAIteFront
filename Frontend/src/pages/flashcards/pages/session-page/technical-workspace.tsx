@@ -1,9 +1,11 @@
-import { useState, useCallback, useEffect, useRef } from "react";
+import { useState, useCallback, useEffect, useMemo, useRef } from "react";
 import Editor from "@monaco-editor/react";
 import {
   AlertCircleIcon,
   CheckCircle2Icon,
+  CopyIcon,
   XIcon,
+  Maximize2Icon,
   PlayIcon,
   RotateCcwIcon,
   SendHorizonalIcon,
@@ -15,7 +17,7 @@ import {
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import {
   Card,
   CardContent,
@@ -41,21 +43,25 @@ import type {
   ExecuteFlashcardCodeResponseDto,
   FlashcardFrontendReviewResponseDto,
   FlashcardResponseDto,
+  FlashcardStudyCoachRecapResponseDto,
 } from "@/features/flashcards/api/dto";
 import { cn } from "@/lib/utils";
+import aimpatinEncouraging from "../../../../assets/aimpatin-encouraging.svg";
+import aimpatinHappy from "../../../../assets/aimpatin-happy.svg";
+import aimpatinProud from "../../../../assets/aimpatin-proud.svg";
+import aimpatinSad from "../../../../assets/aimpatin-sad.svg";
+import aimpatinThinking from "../../../../assets/aimpatin-thinking.svg";
 import {
   type ExecutionTestCase,
   type RuntimeLanguage,
+  type ToneClasses,
   formatExecutionOutcome,
   formatTestValue,
   getExecutionOutcomeClasses,
+  normalizeItemType,
 } from "./runtime";
 
-export type ToneClasses = {
-  border: string;
-  background: string;
-  badge: string;
-};
+const AIMPATIN_COACH_HIDDEN_STORAGE_KEY = "educaite:flashcards:aimpatin-coach-hidden";
 
 type TechnicalWorkspaceProps = {
   flashcard: FlashcardResponseDto | null;
@@ -78,13 +84,10 @@ type TechnicalWorkspaceProps = {
   hiddenTestsCount: number;
   executionResult: ExecuteFlashcardCodeResponseDto | null;
   review: FlashcardFrontendReviewResponseDto | null;
-  onRun: () => void;
   onSubmit: () => void;
   onNext: () => void;
   onRestart: () => void;
-  isRunning: boolean;
   isSubmitting: boolean;
-  isSubmitChecking?: boolean;
   isRestarting: boolean;
   canAdvance: boolean;
   reviewToneClasses: ToneClasses;
@@ -113,13 +116,10 @@ export function TechnicalWorkspace({
   hiddenTestsCount,
   executionResult,
   review,
-  onRun,
   onSubmit,
   onNext,
   onRestart,
-  isRunning,
   isSubmitting,
-  isSubmitChecking = false,
   isRestarting,
   canAdvance,
   reviewToneClasses,
@@ -131,8 +131,9 @@ export function TechnicalWorkspace({
   const hasHiddenTests = hiddenTestsCount > 0;
   const monacoLanguage = mapRuntimeLanguageToMonaco(selectedLanguage || flashcard?.technicalLanguage);
   const showConsole = !isCodeReading;
+  const isOutputPrediction = normalizeItemType(flashcard?.itemType ?? itemLabel) === "OutputPrediction";
 
-  const [consoleHeight, setConsoleHeight] = useState(240);
+  const [consoleHeight, setConsoleHeight] = useState(180);
   const [isResizing, setIsResizing] = useState(false);
   const workspaceRef = useRef<HTMLDivElement>(null);
 
@@ -149,12 +150,15 @@ export function TechnicalWorkspace({
       const containerHeight = containerRect.height;
       const mouseOffsetFromTop = e.clientY - containerRect.top;
       
-      // Calculate height from bottom
+      // Calculate height from bottom while preserving a usable editor area.
       const newConsoleHeight = containerHeight - mouseOffsetFromTop;
+      const minConsoleHeight = 96;
+      const minEditorHeight = 340;
+      const maxConsoleHeight = Math.max(minConsoleHeight, containerHeight - minEditorHeight);
+      const nextConsoleHeight = Math.min(Math.max(newConsoleHeight, minConsoleHeight), maxConsoleHeight);
 
-      // Min 80px for console, min 120px for editor
-      if (newConsoleHeight >= 80 && newConsoleHeight <= containerHeight - 120) {
-        setConsoleHeight(newConsoleHeight);
+      if (Number.isFinite(nextConsoleHeight)) {
+        setConsoleHeight(nextConsoleHeight);
       }
     };
 
@@ -201,7 +205,7 @@ export function TechnicalWorkspace({
         </div>
       </div>
 
-      <div className="grid min-h-0 flex-1 w-full min-w-0 grid-cols-1 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0a0a0a] shadow-2xl lg:grid-cols-[420px_minmax(0,1fr)]">
+      <div className="grid min-h-[680px] flex-1 w-full min-w-0 grid-cols-1 overflow-hidden rounded-[2.5rem] border border-white/10 bg-[#0a0a0a] shadow-2xl lg:min-h-[calc(100dvh-10.5rem)] lg:grid-cols-[360px_minmax(0,1fr)] xl:grid-cols-[400px_minmax(0,1fr)]">
         <aside className="flex min-h-0 min-w-0 flex-col border-b border-white/10 bg-[#0c0c0c] lg:border-b-0 lg:border-r">
           <div className="flex gap-2 border-b border-white/10 bg-white/[0.01] p-4">
             <SectionTabButton label="Problem" active={sidebarTab === "prompt"} onClick={() => setSidebarTab("prompt")} />
@@ -211,12 +215,18 @@ export function TechnicalWorkspace({
           <ScrollArea className="min-h-0 flex-1 p-4 sm:p-6 lg:p-8">
             {sidebarTab === "prompt" && (
               <div className="space-y-8">
-                <TechnicalPromptPanel currentQuestion={currentQuestion} referenceSnippet={referenceSnippet} isLoading={isLoading} technicalLanguage={flashcard?.technicalLanguage} />
+                <TechnicalPromptPanel
+                  currentQuestion={currentQuestion}
+                  referenceSnippet={referenceSnippet}
+                  isLoading={isLoading}
+                  technicalLanguage={flashcard?.technicalLanguage}
+                  isOutputPrediction={isOutputPrediction}
+                />
                 <Alert className="border-white/10 bg-white/[0.03]">
                   <AlertCircleIcon className="size-4 text-primary" />
-                  <AlertTitle className="text-white">Run and submit are different</AlertTitle>
+                  <AlertTitle className="text-white">Submit runs Judge0 validation</AlertTitle>
                   <AlertDescription className="text-white/65">
-                    Run checks only the visible examples. Submit performs the final evaluation and may include hidden tests.
+                    Submit executes compilation/runtime checks and final AI evaluation in one step. Hidden tests, if present, are evaluated server-side.
                   </AlertDescription>
                 </Alert>
               </div>
@@ -255,32 +265,16 @@ export function TechnicalWorkspace({
               <div className="size-2 animate-pulse rounded-full bg-primary" />
               {isRunnable ? "Execution Environment" : "Logic Analysis"}
             </div>
-            {isRunnable && (
-              <Select value={selectedLanguage} onValueChange={(value) => onLanguageChange(value as RuntimeLanguage)}>
-                <SelectTrigger className="h-9 w-full min-w-0 max-w-full border-white/10 bg-white/5 text-xs text-white/80 sm:w-[180px]">
-                  <SelectValue placeholder="Language" />
-                </SelectTrigger>
-                <SelectContent className="border-white/10 bg-[#0a0a0a] text-xs text-white">
-                  <SelectGroup>
-                    {supportedLanguages.map((language) => (
-                      <SelectItem key={language} value={language}>
-                        {language}
-                      </SelectItem>
-                    ))}
-                  </SelectGroup>
-                </SelectContent>
-              </Select>
-            )}
           </div>
 
           <div ref={workspaceRef} className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden">
             <div 
               className={cn("flex min-h-0 flex-1 flex-col overflow-hidden", isRunnable ? "bg-[#18181A]" : "bg-[#0f172a]")}
-              style={{ minHeight: '120px' }}
+              style={{ minHeight: isRunnable ? "340px" : "120px" }}
             >
               {isRunnable ? (
                 <div className="flex min-h-0 min-w-0 flex-1 flex-col overflow-hidden bg-[#18181A]">
-                  <div className="flex shrink-0 items-end justify-between border-b border-white/10 px-4 pt-3">
+                  <div className="flex shrink-0 flex-col gap-3 border-b border-white/10 px-4 pt-3 sm:flex-row sm:items-end sm:justify-between">
                     <div className="flex items-center gap-2 rounded-t-xl border border-b-0 border-white/10 bg-[#242427] px-5 py-2.5 text-sm font-medium text-white">
                       <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#FFD43B" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
                         <path d="m18 16 4-4-4-4" />
@@ -289,7 +283,7 @@ export function TechnicalWorkspace({
                       </svg>
                       Code Editor
                     </div>
-                    <div className="mb-2 flex items-center gap-3">
+                    <div className="mb-2 flex flex-wrap items-center gap-2 sm:justify-end">
                       {executionResult && (
                         <Badge
                           className={cn(
@@ -310,7 +304,7 @@ export function TechnicalWorkspace({
                         Full Screen
                       </Button>
                       <Select value={selectedLanguage} onValueChange={(value) => onLanguageChange(value as RuntimeLanguage)}>
-                        <SelectTrigger className="h-8 min-w-[144px] rounded-full border-white/10 bg-[#242427] px-4 font-mono text-[11px] uppercase tracking-widest text-white/75">
+                        <SelectTrigger className="h-8 min-w-[132px] rounded-full border-white/10 bg-[#242427] px-4 font-mono text-[11px] uppercase tracking-widest text-white/75">
                           <SelectValue placeholder="Language" />
                         </SelectTrigger>
                         <SelectContent className="border-white/10 bg-[#18181A] font-mono text-[11px] text-white">
@@ -323,21 +317,10 @@ export function TechnicalWorkspace({
                           </SelectGroup>
                         </SelectContent>
                       </Select>
-                      <button
-                        type="button"
-                        onClick={onRun}
-                        disabled={isRunning || canAdvance}
-                        className="flex items-center gap-2 rounded-full bg-white px-6 py-1.5 text-[13px] font-bold text-black transition-colors hover:bg-gray-200 disabled:cursor-not-allowed disabled:opacity-50"
-                      >
-                        {isRunning ? "Running..." : "Run"}
-                        <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
-                          <path d="M5 3l14 9-14 9V3z" />
-                        </svg>
-                      </button>
                     </div>
                   </div>
 
-                  <div className="min-h-0 flex-1 overflow-hidden rounded-b-2xl">
+                  <div className="min-h-[340px] flex-1 overflow-hidden rounded-b-2xl">
                     <Editor
                       height="100%"
                       language={monacoLanguage}
@@ -372,12 +355,17 @@ export function TechnicalWorkspace({
                   </div>
                 </div>
               ) : (
-                <div className="flex-1 space-y-6 overflow-auto p-8">
+                <div className={cn("flex-1 overflow-auto", isOutputPrediction ? "bg-[#050505] p-5 sm:p-8" : "p-8")}>
                   <Textarea
                     value={answerText}
                     onChange={(event) => onAnswerTextChange(event.target.value)}
-                    className="h-full min-h-[400px] w-full resize-none border-none bg-transparent p-0 text-lg leading-relaxed text-white placeholder:text-white/5 focus-visible:ring-0"
-                    placeholder="Enter your logical analysis here..."
+                    className={cn(
+                      "h-full min-h-[400px] w-full resize-none text-lg leading-relaxed text-white transition-colors",
+                      isOutputPrediction
+                        ? "rounded-2xl border-primary/20 bg-primary/[0.045] p-5 text-white/90 shadow-[inset_0_1px_0_rgba(255,255,255,0.05)] placeholder:text-primary/30 focus-visible:border-primary/60 focus-visible:ring-primary/20"
+                        : "border-none bg-transparent p-0 placeholder:text-white/5 focus-visible:ring-0",
+                    )}
+                    placeholder={isOutputPrediction ? "Predict the exact output and explain the trace..." : "Enter your logical analysis here..."}
                     disabled={canAdvance}
                   />
                 </div>
@@ -398,11 +386,11 @@ export function TechnicalWorkspace({
                   </div>
                 </div>
                 <div 
-                  className="flex shrink-0 flex-col border-t border-white/10 bg-[#0c0c0c] shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"
-                  style={{ height: `${consoleHeight}px`, minHeight: '80px' }}
+                   className="flex shrink-0 flex-col border-t border-white/10 bg-[#0c0c0c] shadow-[0_-10px_40px_rgba(0,0,0,0.4)]"
+                  style={{ height: `${consoleHeight}px`, minHeight: "96px" }}
                 >
                   <div className="flex h-10 shrink-0 items-center justify-between border-b border-white/10 bg-white/[0.01] px-6">
-                    <p className="text-xs font-medium uppercase tracking-wide text-white/50">Run Results</p>
+                    <p className="text-xs font-medium uppercase tracking-wide text-white/50">Judge0 Results</p>
                     <div className="flex gap-2">
                       <div className="size-2 rounded-full bg-rose-500/40" />
                       <div className="size-2 rounded-full bg-amber-500/40" />
@@ -423,7 +411,7 @@ export function TechnicalWorkspace({
                     ) : (
                       <div className="flex h-full flex-col items-center justify-center gap-2 py-10 opacity-20">
                         <TerminalSquareIcon className="size-8" />
-                        <p className="text-xs font-medium tracking-wide text-white/50">Run code to see deterministic test results.</p>
+                        <p className="text-xs font-medium tracking-wide text-white/50">Submit code to see Judge0 execution feedback.</p>
                       </div>
                     )}
                   </ScrollArea>
@@ -441,7 +429,7 @@ export function TechnicalWorkspace({
             ) : (
               <div className="flex w-full flex-col items-stretch gap-3 sm:w-auto sm:flex-row sm:items-center">
                 <Button size="lg" className="h-12 w-full rounded-2xl bg-primary px-10 text-sm font-semibold text-black shadow-lg shadow-primary/20 transition-transform hover:scale-[1.02] sm:w-auto" onClick={onSubmit} disabled={isSubmitting || (isRunnable ? !code.trim() : !answerText.trim())}>
-                  {isSubmitting ? <Spinner data-icon="inline-start" /> : <SendHorizonalIcon data-icon="inline-start" />} {isSubmitChecking ? "Checking..." : "Submit"}
+                  {isSubmitting ? <Spinner data-icon="inline-start" /> : <SendHorizonalIcon data-icon="inline-start" />} {isSubmitting ? "Submitting..." : "Submit"}
                 </Button>
               </div>
             )}
@@ -635,45 +623,460 @@ export function ReviewPanel({
   );
 }
 
-export function CompletionPanel({
-  onBack,
-  onRestart,
-  isRestarting,
+export function AImpatinSessionCoach({
+  flashcard,
+  fallbackQuestion,
+  review,
+  sessionReviewTone,
+  hasStudentInput,
 }: {
-  onBack: () => void;
-  onRestart: () => void;
-  isRestarting: boolean;
+  flashcard?: FlashcardResponseDto | null;
+  fallbackQuestion?: string;
+  review: FlashcardFrontendReviewResponseDto | null;
+  sessionReviewTone?: "correct" | "repeat";
+  hasStudentInput?: boolean;
 }) {
+  const profile = getAImpatinAnswerProfile(review?.resultTone, sessionReviewTone);
+  const phrases = useMemo(
+    () => buildAImpatinAnswerPhrases({ flashcard, fallbackQuestion, review, sessionReviewTone, hasStudentInput }),
+    [fallbackQuestion, flashcard, hasStudentInput, review, sessionReviewTone],
+  );
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const [isHidden, setIsHidden] = useState(readAImpatinCoachHiddenPreference);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  useEffect(() => {
+    setPhraseIndex(0);
+    setIsExpanded(false);
+  }, [fallbackQuestion, flashcard?.sqid, review?.answerReview, review?.resultTone, sessionReviewTone]);
+
+  const currentPhrase = phrases[phraseIndex % phrases.length] ?? profile.fallbackPhrase;
+  const dotCount = Math.min(phrases.length, 4);
+  const activeDotIndex = (phraseIndex % phrases.length) % dotCount;
+  const setCoachHidden = (nextValue: boolean) => {
+    setIsHidden(nextValue);
+    writeAImpatinCoachHiddenPreference(nextValue);
+  };
+
+  if (isHidden) {
+    return (
+      <button
+        type="button"
+        onClick={() => setCoachHidden(false)}
+        className="group flex w-full max-w-[18rem] items-center gap-2 rounded-full border border-cyan-200/40 bg-[#ecfbff] px-3 py-2 text-left text-sm font-bold text-[#102f36] shadow-[0_16px_34px_rgba(0,0,0,0.2)] transition hover:-translate-y-0.5 hover:border-cyan-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#050505] motion-reduce:transition-none lg:fixed lg:left-6 lg:top-24 lg:z-40"
+        aria-label="Show AImpatin coach"
+      >
+        <span className="relative flex size-10 shrink-0 items-center justify-center rounded-full border border-cyan-200 bg-cyan-950">
+          <img
+            src={aimpatinThinking}
+            alt=""
+            className="size-8 transition group-hover:rotate-[-4deg] group-hover:scale-105 motion-reduce:transition-none"
+          />
+        </span>
+        Show AImpatin
+      </button>
+    );
+  }
+
   return (
-    <div className="flex flex-col items-center py-32 text-center">
-      <div className="mb-10 flex size-24 items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-[0_0_50px_rgba(var(--primary),0.1)]">
-        <PlayIcon className="size-10 fill-primary/20 text-primary" />
-      </div>
-      <h2 className="mb-4 font-sans text-4xl font-semibold tracking-tight text-white sm:text-5xl">Session Completed</h2>
-      <p className="mb-12 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">You have completed all cards in this review run.</p>
-      <div className="flex gap-6">
-        <Button variant="outline" size="lg" className="h-14 rounded-3xl border-white/10 bg-white/5 px-12 text-sm font-medium text-white transition-all hover:border-white/20 hover:bg-white/10" onClick={onBack}>Back to Cards</Button>
-        <Button size="lg" className="h-14 rounded-3xl bg-primary px-12 text-sm font-semibold text-black shadow-xl shadow-primary/20 transition-transform hover:scale-105" onClick={onRestart} disabled={isRestarting}>Restart Session</Button>
+    <div
+      className={cn(
+        "flex w-full items-end justify-start gap-0 overflow-visible py-1 transition-[width] duration-300 motion-reduce:transition-none lg:fixed lg:left-6 lg:top-24 lg:z-40 lg:max-w-[calc(100vw-3rem)] lg:py-0",
+        isExpanded ? "lg:w-[560px]" : "lg:w-[390px]",
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => setPhraseIndex((current) => (current + 1) % phrases.length)}
+        className="group relative z-10 -mr-3 flex size-20 shrink-0 items-center justify-center self-end rounded-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] sm:size-24"
+        aria-label={review ? "Hear another AImpatin encouragement" : "Ask AImpatin for a hint"}
+      >
+        <span
+          className={cn(
+            "absolute inset-1 rounded-full blur-xl opacity-45 transition duration-300 group-hover:opacity-80 motion-reduce:transition-none",
+            profile.glowClassName,
+          )}
+        />
+        <span className={cn("absolute inset-3 rounded-full border", profile.ringClassName)} />
+        <img
+          src={profile.asset}
+          alt="AImpatin study coach"
+          className="relative size-16 drop-shadow-2xl transition duration-300 group-hover:-translate-y-1 group-hover:rotate-[-4deg] group-hover:scale-105 motion-safe:animate-[aimpatin-float_4s_ease-in-out_infinite] motion-reduce:transition-none sm:size-20"
+        />
+      </button>
+      <div
+        className={cn(
+          "relative min-w-0 flex-1 rounded-[1.35rem] border px-5 py-4 pl-7 text-left shadow-[0_18px_38px_rgba(0,0,0,0.22)]",
+          profile.bubbleClassName,
+        )}
+        aria-live="polite"
+      >
+        <span
+          className={cn(
+            "absolute -left-2 bottom-6 size-4 rotate-45 border-b border-l",
+            profile.tailClassName,
+          )}
+        />
+        <div className="flex items-start justify-between gap-3">
+          <p className={cn("pt-1 text-[11px] font-black uppercase", profile.labelClassName)}>AImpatin coach</p>
+          <div className="flex shrink-0 items-center gap-1.5">
+            <button
+              type="button"
+              onClick={() => setIsExpanded((current) => !current)}
+              className={cn(
+                "rounded-full border px-2.5 py-1 text-[11px] font-bold transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-reduce:transition-none",
+                profile.controlClassName,
+              )}
+            >
+              {isExpanded ? "Compact" : "Expand"}
+            </button>
+            <button
+              type="button"
+              onClick={() => setCoachHidden(true)}
+              className={cn(
+                "flex size-7 items-center justify-center rounded-full border transition hover:bg-black/5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary motion-reduce:transition-none",
+                profile.controlClassName,
+              )}
+              aria-label="Hide AImpatin coach"
+            >
+              <XIcon className="size-3.5" />
+            </button>
+          </div>
+        </div>
+        <p className={cn("mt-1 break-words font-bold", isExpanded ? "text-lg leading-8" : "text-base leading-7 sm:text-lg")}>
+          {currentPhrase}
+        </p>
+        <div className="mt-3 flex items-center justify-between gap-3">
+          <p className={cn("text-xs font-medium leading-5", profile.hintClassName)}>
+            {review ? "Tap the mascot for another quick nudge." : "Tap the mascot for a hint or a challenge check."}
+          </p>
+          <div className="flex shrink-0 items-center gap-1.5" aria-hidden="true">
+            {Array.from({ length: dotCount }).map((_, index) => (
+              <span
+                key={index}
+                className={cn(
+                  "size-1.5 rounded-full transition-colors",
+                  index === activeDotIndex ? profile.activeDotClassName : profile.inactiveDotClassName,
+                )}
+              />
+            ))}
+          </div>
+        </div>
       </div>
     </div>
   );
 }
 
-export function SessionLoadingSkeleton() {
-  return <div className="flex h-full min-h-0 flex-col gap-4 animate-pulse font-sans lg:gap-5"><Skeleton className="h-32 w-full shrink-0 rounded-[2.5rem] bg-white/5" /><Skeleton className="min-h-0 flex-1 w-full rounded-[2.5rem] bg-white/5" /></div>;
+function getAImpatinAnswerProfile(
+  resultTone?: FlashcardFrontendReviewResponseDto["resultTone"],
+  sessionReviewTone?: "correct" | "repeat",
+) {
+  if (sessionReviewTone === "correct" || resultTone === "correct") {
+    return {
+      asset: aimpatinHappy,
+      glowClassName: "bg-emerald-400",
+      ringClassName: "border-emerald-200/70 bg-emerald-950/80",
+      bubbleClassName: "border-emerald-200 bg-[#f0fff7] text-[#123829]",
+      tailClassName: "border-emerald-200 bg-[#f0fff7]",
+      labelClassName: "text-emerald-800/60",
+      hintClassName: "text-emerald-950/55",
+      controlClassName: "border-emerald-700/15 text-emerald-950/70",
+      activeDotClassName: "bg-emerald-700",
+      inactiveDotClassName: "bg-emerald-700/20",
+      fallbackPhrase: "Good job. You cleared this card.",
+    };
+  }
+
+  if (resultTone === "close" || resultTone === "partial") {
+    return {
+      asset: aimpatinEncouraging,
+      glowClassName: "bg-amber-300",
+      ringClassName: "border-amber-200/70 bg-amber-950/80",
+      bubbleClassName: "border-amber-200 bg-[#fff8e7] text-[#382709]",
+      tailClassName: "border-amber-200 bg-[#fff8e7]",
+      labelClassName: "text-amber-800/60",
+      hintClassName: "text-amber-950/55",
+      controlClassName: "border-amber-700/15 text-amber-950/70",
+      activeDotClassName: "bg-amber-700",
+      inactiveDotClassName: "bg-amber-700/20",
+      fallbackPhrase: "Good job. You are close, but one part still needs practice.",
+    };
+  }
+
+  if (resultTone) {
+    return {
+      asset: aimpatinSad,
+      glowClassName: "bg-sky-300",
+      ringClassName: "border-sky-200/70 bg-sky-950/80",
+      bubbleClassName: "border-sky-200 bg-[#eff9ff] text-[#102c3d]",
+      tailClassName: "border-sky-200 bg-[#eff9ff]",
+      labelClassName: "text-sky-800/60",
+      hintClassName: "text-sky-950/55",
+      controlClassName: "border-sky-700/15 text-sky-950/70",
+      activeDotClassName: "bg-sky-700",
+      inactiveDotClassName: "bg-sky-700/20",
+      fallbackPhrase: "Good job trying. I will help you review this again.",
+    };
+  }
+
+  return {
+    asset: aimpatinThinking,
+    glowClassName: "bg-cyan-300",
+    ringClassName: "border-cyan-200/70 bg-cyan-950/80",
+    bubbleClassName: "border-cyan-200 bg-[#ecfbff] text-[#102f36]",
+    tailClassName: "border-cyan-200 bg-[#ecfbff]",
+    labelClassName: "text-cyan-800/60",
+    hintClassName: "text-cyan-950/55",
+    controlClassName: "border-cyan-700/15 text-cyan-950/70",
+    activeDotClassName: "bg-cyan-700",
+    inactiveDotClassName: "bg-cyan-700/20",
+    fallbackPhrase: "Need a hint, or are you really sure?",
+  };
 }
 
-export function getReviewToneClasses(tone: string): ToneClasses {
-  switch (tone) {
-    case "correct":
-      return { border: "border-emerald-500/20", background: "bg-emerald-500/[0.03]", badge: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20" };
-    case "close":
-      return { border: "border-sky-500/20", background: "bg-sky-500/[0.03]", badge: "bg-sky-500/10 text-sky-300 border-sky-500/20" };
-    case "partial":
-      return { border: "border-amber-500/20", background: "bg-amber-500/[0.03]", badge: "bg-amber-500/10 text-amber-400 border-amber-500/20" };
-    default:
-      return { border: "border-rose-500/20", background: "bg-rose-500/[0.03]", badge: "bg-rose-500/10 text-rose-400 border-rose-500/20" };
+function buildAImpatinAnswerPhrases({
+  flashcard,
+  fallbackQuestion,
+  review,
+  sessionReviewTone,
+  hasStudentInput,
+}: {
+  flashcard?: FlashcardResponseDto | null;
+  fallbackQuestion?: string;
+  review: FlashcardFrontendReviewResponseDto | null;
+  sessionReviewTone?: "correct" | "repeat";
+  hasStudentInput?: boolean;
+}) {
+  if (!review) {
+    const guidance = firstNonBlankText(flashcard?.answeringGuidance);
+    const topic = firstNonBlankText(flashcard?.technicalLanguage, flashcard?.learningDomain, flashcard?.itemType);
+    const phrases = [
+      "Need a hint, or are you really sure?",
+      hasStudentInput
+        ? "Are you really sure? Read the question one more time before submitting."
+        : "I am watching this card with you. Tap me if you want a hint.",
+      guidance
+        ? `Hint: ${normalizeAImpatinPhrase(guidance)}`
+        : `Hint: focus on what the question is asking, not just the first keyword you notice.`,
+      topic
+        ? `Tiny clue: this card is about ${normalizeAImpatinPhrase(topic)}.`
+        : `Tiny clue: answer the main idea first, then add the detail.`,
+    ];
+
+    if (fallbackQuestion) {
+      phrases.push(`Challenge check: can your answer directly satisfy "${normalizeAImpatinPhrase(fallbackQuestion)}"?`);
+    }
+
+    return phrases;
   }
+
+  const phrases =
+    sessionReviewTone === "correct" || review.resultTone === "correct"
+      ? ["Good job. You cleared this card.", "Nice progress. Keep that recall active."]
+      : review.resultTone === "close" || review.resultTone === "partial"
+        ? [
+            "Good job. You are close, but one detail still needs practice.",
+            "Almost there. Fix the missing piece and you will get it next time.",
+          ]
+        : [
+            "Good job trying. I will help you review this again.",
+            "No worries. Read the weak part once, then try the card again.",
+          ];
+
+  if (review.missingPart) {
+    phrases.push(`Review this: ${normalizeAImpatinPhrase(review.missingPart)}`);
+  }
+
+  if (review.conceptExplanation) {
+    phrases.push(`Remember: ${normalizeAImpatinPhrase(review.conceptExplanation)}`);
+  }
+
+  return phrases;
+}
+
+function firstNonBlankText(...values: Array<string | null | undefined>) {
+  return values.find((value) => typeof value === "string" && value.trim().length > 0)?.trim() ?? "";
+}
+
+function normalizeAImpatinPhrase(value: string) {
+  return value.replace(/\s+/g, " ").trim();
+}
+
+function readAImpatinCoachHiddenPreference() {
+  if (typeof window === "undefined") {
+    return false;
+  }
+
+  try {
+    return window.localStorage.getItem(AIMPATIN_COACH_HIDDEN_STORAGE_KEY) === "true";
+  } catch {
+    return false;
+  }
+}
+
+function writeAImpatinCoachHiddenPreference(isHidden: boolean) {
+  if (typeof window === "undefined") {
+    return;
+  }
+
+  try {
+    window.localStorage.setItem(AIMPATIN_COACH_HIDDEN_STORAGE_KEY, String(isHidden));
+  } catch {
+    // Local storage is only a convenience; the coach should still work without it.
+  }
+}
+
+export function CompletionPanel({
+  onBack,
+  onRestart,
+  isRestarting,
+  studyCoachRecap,
+}: {
+  onBack: () => void;
+  onRestart: () => void;
+  isRestarting: boolean;
+  studyCoachRecap?: FlashcardStudyCoachRecapResponseDto | null;
+}) {
+  return (
+    <div className="relative flex min-h-[calc(100dvh-9rem)] flex-col items-center justify-center gap-8 py-10 text-center sm:py-14 lg:py-16">
+      <AImpatinCoachRecap recap={studyCoachRecap} />
+      <div className="flex flex-col items-center">
+        <div className="mb-8 flex size-20 items-center justify-center rounded-full border border-primary/20 bg-primary/10 shadow-[0_0_50px_rgba(0,206,200,0.12)] sm:size-24">
+          <PlayIcon className="size-10 fill-primary/20 text-primary" />
+        </div>
+        <h2 className="mb-4 font-sans text-4xl font-semibold tracking-tight text-white sm:text-5xl">Session Completed</h2>
+        <p className="mb-12 max-w-lg text-base leading-relaxed text-white/55 sm:text-lg">You have completed all cards in this review run.</p>
+        <div className="flex w-full max-w-md flex-col gap-3 sm:flex-row sm:justify-center sm:gap-6">
+          <Button variant="outline" size="lg" className="h-14 rounded-3xl border-white/10 bg-white/5 px-8 text-sm font-medium text-white transition-all hover:border-white/20 hover:bg-white/10 sm:px-12" onClick={onBack}>Back to Cards</Button>
+          <Button size="lg" className="h-14 rounded-3xl bg-primary px-8 text-sm font-semibold text-black shadow-xl shadow-primary/20 transition-transform hover:scale-105 sm:px-12" onClick={onRestart} disabled={isRestarting}>Restart Session</Button>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function AImpatinCoachRecap({ recap }: { recap?: FlashcardStudyCoachRecapResponseDto | null }) {
+  const [phraseIndex, setPhraseIndex] = useState(0);
+  const coachRecap = recap ?? defaultStudyCoachRecap;
+  const quickPhrases = useMemo(() => {
+    const phrases = coachRecap.quickPhrases.filter((phrase) => phrase.trim().length > 0);
+    return phrases.length > 0 ? phrases : defaultStudyCoachRecap.quickPhrases;
+  }, [coachRecap.quickPhrases]);
+
+  useEffect(() => {
+    setPhraseIndex(0);
+  }, [coachRecap.cheerLine]);
+
+  const currentPhrase = phraseIndex === 0
+    ? coachRecap.cheerLine
+    : quickPhrases[(phraseIndex - 1) % quickPhrases.length];
+  const mascotSrc = getAImpatinMascotAsset(coachRecap.mascotEmotion, coachRecap.tone);
+  const toneClasses = getStudyCoachToneClasses(coachRecap.tone);
+
+  const handleMascotClick = () => {
+    setPhraseIndex((current) => (current + 1) % (quickPhrases.length + 1));
+  };
+
+  return (
+    <div className="w-full max-w-5xl">
+      <div className={cn("relative overflow-hidden rounded-[2rem] border p-4 text-left shadow-2xl backdrop-blur-xl sm:p-6", toneClasses.panel)}>
+        <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-white/30 to-transparent" />
+        <div className="grid gap-5 lg:grid-cols-[180px_minmax(0,1fr)] lg:items-center">
+          <button
+            type="button"
+            onClick={handleMascotClick}
+            className="group relative mx-auto grid size-32 shrink-0 place-items-center rounded-full border border-white/10 bg-black/30 outline-none transition duration-300 hover:scale-[1.03] hover:border-primary/40 focus-visible:ring-2 focus-visible:ring-primary/50 sm:size-40"
+            aria-label="Hear AImpatin's next encouragement"
+          >
+            <span className={cn("absolute inset-0 rounded-full opacity-60 blur-2xl transition group-hover:opacity-90", toneClasses.glow)} />
+            <img
+              src={mascotSrc}
+              alt="AImpatin study coach"
+              className="relative z-10 size-28 object-contain drop-shadow-[0_18px_34px_rgba(0,0,0,0.4)] motion-safe:animate-[aimpatin-float_3.8s_ease-in-out_infinite] group-hover:motion-safe:animate-[aimpatin-wave_0.7s_ease-in-out] sm:size-36"
+            />
+          </button>
+          <div className="min-w-0 space-y-4">
+            <div className="rounded-2xl border border-white/10 bg-black/35 px-4 py-3">
+              <p className="text-xs font-semibold uppercase text-primary/80">AImpatin says</p>
+              <p className="mt-1 text-base font-semibold leading-relaxed text-white sm:text-lg">{currentPhrase}</p>
+            </div>
+            <div>
+              <h3 className="text-xl font-semibold text-white sm:text-2xl">{coachRecap.headline}</h3>
+              <p className="mt-1 text-sm leading-relaxed text-white/60">{coachRecap.nextStep}</p>
+            </div>
+          </div>
+        </div>
+        <div className="mt-5 grid gap-3 sm:grid-cols-2">
+          <RecapList title="You improved" items={coachRecap.improved} tone="strong" />
+          <RecapList title="Still weak" items={coachRecap.stillWeak} tone="weak" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function RecapList({ title, items, tone }: { title: string; items: string[]; tone: "strong" | "weak" }) {
+  const safeItems = items.length > 0 ? items : ["No clear signal yet."];
+
+  return (
+    <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4">
+      <p className={cn("text-xs font-semibold uppercase", tone === "strong" ? "text-emerald-200" : "text-amber-200")}>{title}</p>
+      <ul className="mt-3 space-y-2">
+        {safeItems.slice(0, 3).map((item) => (
+          <li key={item} className="text-sm leading-relaxed text-white/70">{item}</li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+const defaultStudyCoachRecap: FlashcardStudyCoachRecapResponseDto = {
+  headline: "Session complete",
+  improved: ["You completed this flashcard run."],
+  stillWeak: ["AImpatin needs one more run to spot the weakest cards."],
+  nextStep: "Restart the session if you want AImpatin to guide the next review.",
+  cheerLine: "Good job. AImpatin is ready for the next round.",
+  quickPhrases: ["Good job.", "Nice progress.", "Review this next."],
+  tone: "mixed",
+  mascotEmotion: "encouraging",
+};
+
+function getAImpatinMascotAsset(
+  emotion: FlashcardStudyCoachRecapResponseDto["mascotEmotion"],
+  tone: FlashcardStudyCoachRecapResponseDto["tone"],
+) {
+  if (emotion === "happy") return aimpatinHappy;
+  if (emotion === "proud") return aimpatinProud;
+  if (emotion === "thinking") return aimpatinThinking;
+  if (emotion === "sad") return aimpatinSad;
+  if (tone === "strong") return aimpatinProud;
+  if (tone === "weak") return aimpatinSad;
+  return aimpatinEncouraging;
+}
+
+function getStudyCoachToneClasses(tone: FlashcardStudyCoachRecapResponseDto["tone"]) {
+  if (tone === "strong") {
+    return {
+      panel: "border-emerald-400/20 bg-emerald-950/35 shadow-emerald-950/40",
+      glow: "bg-emerald-400/30",
+    };
+  }
+
+  if (tone === "weak") {
+    return {
+      panel: "border-amber-400/20 bg-amber-950/30 shadow-amber-950/35",
+      glow: "bg-amber-300/25",
+    };
+  }
+
+  return {
+    panel: "border-primary/20 bg-[#061716]/80 shadow-cyan-950/35",
+    glow: "bg-primary/25",
+  };
+}
+
+export function SessionLoadingSkeleton() {
+  return <div className="flex h-full min-h-0 flex-col gap-4 animate-pulse font-sans lg:gap-5"><Skeleton className="h-32 w-full shrink-0 rounded-[2.5rem] bg-white/5" /><Skeleton className="min-h-0 flex-1 w-full rounded-[2.5rem] bg-white/5" /></div>;
 }
 
 function SectionTabButton({ label, active, onClick }: { label: string; active: boolean; onClick: () => void }) {
@@ -697,11 +1100,13 @@ function TechnicalPromptPanel({
   referenceSnippet,
   isLoading,
   technicalLanguage,
+  isOutputPrediction,
 }: {
   currentQuestion: string;
   referenceSnippet: string;
   isLoading: boolean;
   technicalLanguage?: string;
+  isOutputPrediction: boolean;
 }) {
   const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
@@ -720,11 +1125,17 @@ function TechnicalPromptPanel({
           <div className="flex items-center justify-between gap-3">
             <p className="text-xs font-medium uppercase tracking-wide text-white/50">Reference Snippet</p>
             <Dialog open={isPreviewOpen} onOpenChange={setIsPreviewOpen}>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm" className="h-8 border-white/15 bg-white/5 text-xs text-white/80 hover:bg-white/10">
+              {!isOutputPrediction ? (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 border-white/15 bg-white/5 text-xs text-white/80 hover:bg-white/10"
+                  onClick={() => setIsPreviewOpen(true)}
+                >
                   Full Screen
                 </Button>
-              </DialogTrigger>
+              ) : null}
               <DialogContent
                 showCloseButton={false}
                 className="!z-50 !h-[76dvh] !w-[76vw] !max-w-[980px] !gap-0 !border-0 !bg-transparent !p-1.5 !ring-0 text-white sm:!p-2.5"
@@ -745,19 +1156,37 @@ function TechnicalPromptPanel({
                     </DialogClose>
                   </DialogHeader>
                   <div className="min-h-0 flex-1 overflow-hidden bg-[radial-gradient(circle_at_20%_10%,rgba(30,110,255,0.22),transparent_35%),radial-gradient(circle_at_80%_75%,rgba(8,58,160,0.28),transparent_40%),#071226]">
-                    <div className="h-full w-full overflow-y-auto px-5 py-6 sm:px-6 sm:py-6">
-                      <pre className="min-h-full w-full whitespace-pre-wrap font-mono text-[13px] leading-7 text-[#dbe8ff] sm:text-[14px] sm:leading-7">
-                        <code>{referenceSnippet}</code>
-                      </pre>
+                    <div className="h-full w-full overflow-hidden p-4 sm:p-5">
+                      <CodeBlock
+                        code={referenceSnippet}
+                        language={technicalLanguage}
+                        fullHeight
+                        highlighted={isOutputPrediction}
+                      />
                     </div>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
           </div>
-          <div className="overflow-hidden rounded-3xl border border-white/5">
-            <CodeBlock code={referenceSnippet} language={technicalLanguage} />
-          </div>
+          {isOutputPrediction ? (
+            <Button
+              type="button"
+              variant="outline"
+              className="h-12 w-full justify-start rounded-2xl border-primary/20 bg-primary/[0.06] px-4 font-semibold text-primary hover:border-primary/40 hover:bg-primary/10 hover:text-primary focus-visible:ring-primary/25"
+              onClick={() => setIsPreviewOpen(true)}
+            >
+              <Maximize2Icon data-icon="inline-start" />
+              Code
+            </Button>
+          ) : (
+            <div className="min-w-0 overflow-hidden rounded-3xl border border-white/5">
+              <CodeBlock
+                code={referenceSnippet}
+                language={technicalLanguage}
+              />
+            </div>
+          )}
         </div>
       )}
     </div>
@@ -832,7 +1261,7 @@ function SandboxResultPanel({
       <div className="border-b border-white/10 px-1">
         <div className="flex flex-wrap items-center gap-x-6 gap-y-1">
           <JudgeTab label="Compile Error" active={activeTab === "compile"} tone="error" />
-          <JudgeTab label="Run Status" active={activeTab === "run"} />
+          <JudgeTab label="Execution Status" active={activeTab === "run"} />
         </div>
       </div>
 
@@ -846,7 +1275,7 @@ function SandboxResultPanel({
               <div>
                 <p className="text-2xl font-semibold tracking-tight text-white sm:text-3xl">{result.executionStatus === "compileError" ? "Compilation Error" : statusLabel}</p>
                 <p className="mt-3 max-w-2xl text-sm leading-7 text-white/65 sm:text-base sm:leading-8">
-                  Run checks visible cases first. Submit may add hidden cases before AI feedback appears.
+                  Submission executes Judge0 checks before AI review. Hidden tests, if present, stay private and only summary totals are shown.
                 </p>
               </div>
               {result.message && result.executionStatus !== "compileError" ? (
@@ -1008,15 +1437,277 @@ function ResultField({
   );
 }
 
-function CodeBlock({ code, fullHeight = false }: { code: string; language?: string; fullHeight?: boolean }) {
+function CodeBlock({
+  code,
+  language,
+  fullHeight = false,
+  highlighted = false,
+}: {
+  code: string;
+  language?: string;
+  fullHeight?: boolean;
+  highlighted?: boolean;
+}) {
+  const normalizedCode = code.replace(/\r\n/g, "\n");
+  const [copyStatus, setCopyStatus] = useState<"idle" | "copied" | "failed">("idle");
+  const copyResetTimeoutRef = useRef<number | null>(null);
+
+  const handleCopy = async () => {
+    const didCopy = await copyTextToClipboard(normalizedCode);
+    setCopyStatus(didCopy ? "copied" : "failed");
+
+    if (copyResetTimeoutRef.current) {
+      window.clearTimeout(copyResetTimeoutRef.current);
+    }
+
+    copyResetTimeoutRef.current = window.setTimeout(() => {
+      setCopyStatus("idle");
+    }, 1600);
+  };
+
+  if (highlighted) {
+    const lines = normalizedCode.split("\n");
+
+    return (
+      <div
+        className={cn(
+          "flex min-h-0 w-full max-w-full min-w-0 flex-col overflow-hidden rounded-2xl border border-primary/20 bg-[#07111f] shadow-[inset_0_1px_0_rgba(255,255,255,0.04)]",
+          fullHeight ? "h-full w-full" : "max-h-[540px]",
+        )}
+      >
+        <div className="flex w-full min-w-0 shrink-0 items-center justify-between gap-3 border-b border-primary/15 bg-primary/[0.055] px-4 py-2.5">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="size-2 rounded-full bg-primary" />
+            <span className="truncate font-mono text-[11px] font-semibold uppercase tracking-[0.18em] text-primary/85">
+              {formatCodeLanguageLabel(language)}
+            </span>
+          </div>
+          <div className="flex shrink-0 items-center gap-2">
+            <Badge
+              variant="outline"
+              className={cn(
+                "hidden border-primary/20 bg-black/20 text-[10px] uppercase tracking-[0.18em] text-primary/75 sm:inline-flex",
+                copyStatus === "copied" && "border-primary/35 bg-primary/10 text-primary",
+                copyStatus === "failed" && "border-rose-400/30 bg-rose-500/10 text-rose-200",
+              )}
+            >
+              {copyStatus === "copied" ? "Copied" : copyStatus === "failed" ? "Copy failed" : "Read only"}
+            </Badge>
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon-sm"
+              className="border border-primary/15 bg-black/25 text-primary/80 hover:bg-primary/10 hover:text-primary focus-visible:ring-primary/25"
+              onClick={handleCopy}
+              aria-label="Copy reference snippet"
+            >
+              <CopyIcon />
+            </Button>
+          </div>
+        </div>
+        <pre className="min-h-0 w-full min-w-0 flex-1 overflow-auto py-4 font-mono text-[12px] leading-6 sm:text-[13px]">
+          <code className="inline-block min-w-max">
+            {lines.map((line, index) => (
+              <span
+                key={`${index}-${line}`}
+                className="grid min-w-max grid-cols-[3.25rem_minmax(0,1fr)] px-2 transition-colors hover:bg-primary/[0.045]"
+              >
+                <span className="select-none pr-4 text-right text-white/25">{index + 1}</span>
+                <span className="whitespace-pre pr-4 text-[#d8e7ff]">{renderHighlightedCodeLine(line, language)}</span>
+              </span>
+            ))}
+          </code>
+        </pre>
+      </div>
+    );
+  }
+
   return (
     <pre className={cn(
       "overflow-x-auto whitespace-pre-wrap rounded-2xl border border-white/5 bg-[#0f172a] p-6 font-mono text-[13px] leading-7",
       fullHeight && "min-h-full w-full",
     )}>
-      <code>{code}</code>
+      <code>{normalizedCode}</code>
     </pre>
   );
+}
+
+async function copyTextToClipboard(text: string) {
+  try {
+    if (navigator.clipboard?.writeText && window.isSecureContext) {
+      await navigator.clipboard.writeText(text);
+      return true;
+    }
+  } catch {
+    // Fall through to the textarea fallback for browsers that block Clipboard API writes.
+  }
+
+  const textArea = document.createElement("textarea");
+  textArea.value = text;
+  textArea.setAttribute("readonly", "");
+  textArea.style.position = "fixed";
+  textArea.style.top = "0";
+  textArea.style.left = "-9999px";
+  textArea.style.opacity = "0";
+
+  document.body.appendChild(textArea);
+  textArea.focus();
+  textArea.select();
+  textArea.setSelectionRange(0, text.length);
+
+  try {
+    return document.execCommand("copy");
+  } catch {
+    return false;
+  } finally {
+    document.body.removeChild(textArea);
+  }
+}
+
+const codeTokenPattern = /(\/\/.*|\/\*[\s\S]*?\*\/|'(?:\\.|[^'\\])*'|"(?:\\.|[^"\\])*"|`(?:\\.|[^`\\])*`|\b[A-Za-z_]\w*\b|\b\d+(?:\.\d+)?\b|[{}()[\];,.=+\-*/<>!?:]+)/g;
+
+const codeKeywords = new Set([
+  "abstract",
+  "as",
+  "async",
+  "await",
+  "break",
+  "case",
+  "catch",
+  "class",
+  "const",
+  "continue",
+  "default",
+  "def",
+  "do",
+  "else",
+  "extends",
+  "finally",
+  "for",
+  "foreach",
+  "from",
+  "function",
+  "if",
+  "import",
+  "in",
+  "interface",
+  "namespace",
+  "new",
+  "private",
+  "protected",
+  "public",
+  "return",
+  "static",
+  "switch",
+  "this",
+  "throw",
+  "try",
+  "using",
+  "var",
+  "void",
+  "while",
+]);
+
+const codeTypes = new Set([
+  "bool",
+  "boolean",
+  "char",
+  "decimal",
+  "double",
+  "float",
+  "int",
+  "integer",
+  "long",
+  "number",
+  "object",
+  "short",
+  "string",
+  "String",
+]);
+
+function renderHighlightedCodeLine(line: string, language?: string) {
+  const tokens = line.split(codeTokenPattern).filter((token) => token.length > 0);
+
+  return tokens.map((token, index) => (
+    <span
+      key={`${token}-${index}`}
+      className={getHighlightedCodeTokenClass(token, tokens[index + 1], tokens[index - 1], language)}
+    >
+      {token}
+    </span>
+  ));
+}
+
+function getHighlightedCodeTokenClass(token: string, nextToken?: string, previousToken?: string, language?: string) {
+  const trimmed = token.trim();
+
+  if (!trimmed) {
+    return "";
+  }
+
+  if (/^(\/\/|\/\*)/.test(trimmed)) {
+    return "text-white/35 italic";
+  }
+
+  if (/^(['"`]).*\1$/.test(trimmed)) {
+    return "text-emerald-300";
+  }
+
+  if (/^\d+(?:\.\d+)?$/.test(trimmed)) {
+    return "text-rose-300";
+  }
+
+  if (/^[{}()[\];,.]+$/.test(trimmed)) {
+    return "text-white/45";
+  }
+
+  if (/^[=+\-*/<>!?:]+$/.test(trimmed)) {
+    return "text-primary/75";
+  }
+
+  if (codeKeywords.has(trimmed)) {
+    return "text-sky-300";
+  }
+
+  if (codeTypes.has(trimmed) || isLanguageTypeToken(trimmed, language)) {
+    return "text-violet-300";
+  }
+
+  if (/^[A-Z]\w*$/.test(trimmed)) {
+    return "text-cyan-200";
+  }
+
+  if (nextToken === "(" && previousToken !== "if" && previousToken !== "for" && previousToken !== "while" && previousToken !== "switch") {
+    return "text-amber-200";
+  }
+
+  if (/^[A-Za-z_]\w*$/.test(trimmed)) {
+    return "text-[#dbeafe]";
+  }
+
+  return "text-[#d8e7ff]";
+}
+
+function isLanguageTypeToken(token: string, language?: string) {
+  const normalizedLanguage = mapRuntimeLanguageToMonaco(language);
+
+  if (normalizedLanguage === "csharp") {
+    return token === "Console" || token === "Array" || token === "Exception";
+  }
+
+  if (normalizedLanguage === "java") {
+    return token === "System" || token === "Integer" || token === "Exception";
+  }
+
+  if (normalizedLanguage === "cpp") {
+    return token === "std" || token === "vector" || token === "size_t";
+  }
+
+  return false;
+}
+
+function formatCodeLanguageLabel(language?: string) {
+  return mapRuntimeLanguageToMonaco(language).replace("plaintext", "code");
 }
 
 function mapRuntimeLanguageToMonaco(language?: string) {

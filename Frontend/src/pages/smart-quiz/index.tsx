@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
   AlertCircleIcon,
@@ -46,6 +46,7 @@ import { getErrorMessage } from "@/lib/api/errors";
 
 import type {
   GeneratedQuizItemDraftDto,
+  QuizGenerationJobDto,
   QuizItemDto,
   QuizSessionItemDto,
   ScoringResultDto,
@@ -54,13 +55,27 @@ import {
   useActiveQuizSessionQuery,
   useGenerateQuizItemsPreviewMutation,
   useNextQuizItemQuery,
+  useQuizGenerationJobQuery,
   useQuizItemsByDeckQuery,
   useRestartQuizSessionMutation,
+  useRetryQuizGenerationHydrationMutation,
   useSaveGeneratedQuizItemsMutation,
   useStartQuizSessionMutation,
   useSubmitQuizAnswerMutation,
   useAbandonQuizSessionMutation,
 } from "@/features/smart-quiz/api/hooks";
+import {
+  clampSmartQuizPreviewCount,
+  getQuizDraftValidationMeta,
+  getQuizGenerationHydrationMeta,
+  getSavableQuizDrafts,
+  getSmartQuizPreviewCountError,
+  isJavaExecutableItemType,
+  isJavaTechnicalLanguage,
+  smartQuizPreviewCountMax,
+  smartQuizPreviewCountMin,
+  toJavaSafeItemTypes,
+} from "@/features/smart-quiz/preview-generation";
 
 const defaultItemTypeValues = ["1", "9", "8"];
 
@@ -83,6 +98,7 @@ function SmartQuizPage() {
   const [count, setCount] = useState(5);
   const [technicalLanguage, setTechnicalLanguage] = useState("");
   const [itemTypes, setItemTypes] = useState<string[]>(defaultItemTypeValues);
+  const [generationJobSqid, setGenerationJobSqid] = useState<string | null>(null);
   const [activeSessionSqid, setActiveSessionSqid] = useState<string | null>(searchParams.get("sessionSqid"));
   const [answer, setAnswer] = useState("");
   const [answerStartedAt, setAnswerStartedAt] = useState(() => Date.now());
@@ -93,21 +109,33 @@ function SmartQuizPage() {
   const activeSessionQuery = useActiveQuizSessionQuery(1, normalizedDeckSqid || null, null, Boolean(normalizedDeckSqid));
   const nextItemQuery = useNextQuizItemQuery(activeSessionSqid, Boolean(activeSessionSqid));
   const generatePreviewMutation = useGenerateQuizItemsPreviewMutation(normalizedDeckSqid || null);
+  const generationJobQuery = useQuizGenerationJobQuery(generationJobSqid, Boolean(generationJobSqid));
+  const retryHydrationMutation = useRetryQuizGenerationHydrationMutation(generationJobSqid);
   const saveGeneratedMutation = useSaveGeneratedQuizItemsMutation(normalizedDeckSqid || null);
   const startSessionMutation = useStartQuizSessionMutation();
   const restartSessionMutation = useRestartQuizSessionMutation();
   const abandonSessionMutation = useAbandonQuizSessionMutation();
   const submitAnswerMutation = useSubmitQuizAnswerMutation(activeSessionSqid);
 
-  const preview = generatePreviewMutation.data;
+  const preview = generationJobQuery.data ?? generatePreviewMutation.data;
   const activeSession = activeSessionQuery.data;
   const currentNextItem = nextItemQuery.data?.nextItem ?? null;
   const currentSession = nextItemQuery.data?.session ?? activeSession ?? null;
   const progressValue = currentSession ? Math.min(100, ((currentSession.currentItemIndex + 1) / Math.max(currentSession.take, 1)) * 100) : 0;
 
   const existingItemCount = deckItemsQuery.data?.length ?? 0;
-  const canGenerate = Boolean(normalizedDeckSqid && sourceText.trim());
+  const previewCountError = getSmartQuizPreviewCountError(count);
+  const isJavaContent = isJavaTechnicalLanguage(technicalLanguage);
+  const canGenerate = Boolean(normalizedDeckSqid && sourceText.trim() && !previewCountError);
   const canSubmit = Boolean(activeSessionSqid && currentNextItem && answer.trim());
+
+  useEffect(() => {
+    if (!isJavaContent) {
+      return;
+    }
+
+    setItemTypes((current) => toJavaSafeItemTypes(current, defaultItemTypeValues));
+  }, [isJavaContent]);
 
   function applyDeckSqid() {
     const next = new URLSearchParams(searchParams);
@@ -120,14 +148,22 @@ function SmartQuizPage() {
   }
 
   async function handleGeneratePreview() {
-    await generatePreviewMutation.mutateAsync({
+    const requestedCount = clampSmartQuizPreviewCount(count);
+    const requestedItemTypes = isJavaContent
+      ? toJavaSafeItemTypes(itemTypes, defaultItemTypeValues)
+      : itemTypes;
+
+    setCount(requestedCount);
+
+    const response = await generatePreviewMutation.mutateAsync({
       sourceText,
-      count,
+      count: requestedCount,
       learningDomain: 0,
       technicalLanguage: technicalLanguage.trim() || undefined,
-      itemTypes: itemTypes.map(Number),
+      itemTypes: requestedItemTypes.map(Number),
       difficulty: 50,
     });
+    setGenerationJobSqid(response.generationJobSqid);
   }
 
   async function handleSaveGenerated(items: GeneratedQuizItemDraftDto[]) {
@@ -138,7 +174,7 @@ function SmartQuizPage() {
     const session = await startSessionMutation.mutateAsync({
       scopeType: 1,
       deckSqid: normalizedDeckSqid,
-      take: Math.max(1, Math.min(50, count)),
+      take: clampSmartQuizPreviewCount(count),
     });
     setActiveSessionSqid(session.sessionSqid);
     setAnswer("");
@@ -203,6 +239,8 @@ function SmartQuizPage() {
   const currentError = useMemo(() => {
     const errors = [
       generatePreviewMutation.error,
+      generationJobQuery.error,
+      retryHydrationMutation.error,
       saveGeneratedMutation.error,
       startSessionMutation.error,
       restartSessionMutation.error,
@@ -219,7 +257,9 @@ function SmartQuizPage() {
     activeSessionQuery.error,
     deckItemsQuery.error,
     generatePreviewMutation.error,
+    generationJobQuery.error,
     nextItemQuery.error,
+    retryHydrationMutation.error,
     restartSessionMutation.error,
     saveGeneratedMutation.error,
     startSessionMutation.error,
@@ -297,11 +337,18 @@ function SmartQuizPage() {
                       <Input
                         id="smart-quiz-count"
                         type="number"
-                        min={1}
-                        max={50}
+                        min={smartQuizPreviewCountMin}
+                        max={smartQuizPreviewCountMax}
                         value={count}
                         onChange={(event) => setCount(Number(event.target.value))}
+                        onBlur={() => setCount((current) => clampSmartQuizPreviewCount(current))}
+                        aria-invalid={Boolean(previewCountError)}
                       />
+                      {previewCountError ? (
+                        <p className="text-xs text-destructive">{previewCountError}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Generate 3 to 10 drafts.</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <label className="text-sm text-muted-foreground" htmlFor="smart-quiz-language">Technical language</label>
@@ -320,14 +367,30 @@ function SmartQuizPage() {
                       variant="outline"
                       className="flex flex-wrap justify-start"
                       value={itemTypes}
-                      onValueChange={(value) => setItemTypes(value.length > 0 ? value : defaultItemTypeValues)}
+                      onValueChange={(value) => {
+                        const nextValues = value.length > 0 ? value : defaultItemTypeValues;
+                        setItemTypes(isJavaContent ? toJavaSafeItemTypes(nextValues, defaultItemTypeValues) : nextValues);
+                      }}
                     >
                       {selectableItemTypes.map((itemType) => (
-                        <ToggleGroupItem key={itemType.value} value={itemType.value}>
+                        <ToggleGroupItem
+                          key={itemType.value}
+                          value={itemType.value}
+                          disabled={isJavaContent && isJavaExecutableItemType(itemType.value)}
+                        >
                           {itemType.label}
                         </ToggleGroupItem>
                       ))}
                     </ToggleGroup>
+                    {isJavaContent ? (
+                      <Alert>
+                        <AlertCircleIcon />
+                        <AlertTitle>Java study mode</AlertTitle>
+                        <AlertDescription>
+                          Java source can generate conceptual, short-answer, or choice items. Executable Java prompts are excluded.
+                        </AlertDescription>
+                      </Alert>
+                    ) : null}
                   </div>
                   <div className="flex flex-col gap-2">
                     <label className="text-sm text-muted-foreground" htmlFor="smart-quiz-source">Source material</label>
@@ -350,10 +413,15 @@ function SmartQuizPage() {
               </Card>
 
               <PreviewPanel
-                previewItems={preview?.items ?? []}
+                generationJob={preview ?? null}
+                previewItems={preview?.drafts ?? []}
                 warnings={preview?.warnings ?? []}
+                errors={preview?.errors ?? []}
+                isPolling={generationJobQuery.isFetching && Boolean(generationJobSqid)}
                 isLoading={generatePreviewMutation.isPending}
+                isRetrying={retryHydrationMutation.isPending}
                 isSaving={saveGeneratedMutation.isPending}
+                onRetryHydration={generationJobSqid ? () => retryHydrationMutation.mutateAsync() : undefined}
                 onSaveAll={handleSaveGenerated}
               />
             </div>
@@ -461,18 +529,34 @@ function SmartQuizPage() {
 }
 
 function PreviewPanel({
+  generationJob,
   previewItems,
   warnings,
+  errors,
+  isPolling,
   isLoading,
+  isRetrying,
   isSaving,
+  onRetryHydration,
   onSaveAll,
 }: {
+  generationJob: QuizGenerationJobDto | null;
   previewItems: GeneratedQuizItemDraftDto[];
   warnings: string[];
+  errors: string[];
+  isPolling: boolean;
   isLoading: boolean;
+  isRetrying: boolean;
   isSaving: boolean;
+  onRetryHydration?: () => Promise<unknown>;
   onSaveAll: (items: GeneratedQuizItemDraftDto[]) => Promise<void>;
 }) {
+  const savableItems = getSavableQuizDrafts(previewItems);
+  const hydrationMeta = generationJob ? getQuizGenerationHydrationMeta(generationJob.hydrationStatus) : null;
+  const canRetryHydration = Boolean(
+    generationJob && onRetryHydration && generationJob.hydrationStatus !== "Ready",
+  );
+
   return (
     <Card>
       <CardHeader>
@@ -480,14 +564,49 @@ function PreviewPanel({
         <CardDescription>Review the AI draft before saving it to EducAIteAPI.</CardDescription>
         {previewItems.length > 0 && (
           <CardAction>
-            <Button type="button" size="sm" onClick={() => onSaveAll(previewItems)} disabled={isSaving}>
-              {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
-              Save all
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {canRetryHydration ? (
+                <Button type="button" size="sm" variant="outline" onClick={onRetryHydration} disabled={isRetrying}>
+                  {isRetrying ? <Spinner data-icon="inline-start" /> : <RefreshCwIcon data-icon="inline-start" />}
+                  Retry hydration
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onSaveAll(savableItems)}
+                disabled={isSaving || savableItems.length === 0}
+              >
+                {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
+                Save usable
+              </Button>
+            </div>
           </CardAction>
         )}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {generationJob && hydrationMeta ? (
+          <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={hydrationMeta.variant}>{hydrationMeta.label}</Badge>
+                {isPolling ? <Spinner className="size-4" /> : null}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {previewItems.length}/{generationJob.requestedCount} drafts
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">{hydrationMeta.description}</p>
+            <p className="truncate text-xs text-muted-foreground">Job {generationJob.generationJobSqid}</p>
+          </div>
+        ) : null}
+        {errors.length > 0 && (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>Hydration errors</AlertTitle>
+            <AlertDescription>{errors.join(" ")}</AlertDescription>
+          </Alert>
+        )}
         {warnings.length > 0 && (
           <Alert>
             <AlertCircleIcon />
@@ -526,16 +645,36 @@ function PreviewPanel({
 }
 
 function QuizDraftCard({ item }: { item: GeneratedQuizItemDraftDto }) {
+  const validationMeta = getQuizDraftValidationMeta(item.validationStatus);
+
   return (
     <Card size="sm">
       <CardHeader>
         <CardTitle>{item.question}</CardTitle>
-        <CardDescription>{item.answeringGuidance || "No additional guidance supplied."}</CardDescription>
+        <CardDescription>{item.answeringGuidance || validationMeta.description}</CardDescription>
         <CardAction>
-          <Badge variant="secondary">{item.itemType}</Badge>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Badge variant={validationMeta.variant}>{validationMeta.label}</Badge>
+            <Badge variant="secondary">{item.itemType}</Badge>
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground">{validationMeta.description}</p>
+        {item.errors.length > 0 ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>Draft unavailable</AlertTitle>
+            <AlertDescription>{item.errors.join(" ")}</AlertDescription>
+          </Alert>
+        ) : null}
+        {item.warnings.length > 0 ? (
+          <Alert>
+            <AlertCircleIcon />
+            <AlertTitle>Draft warning</AlertTitle>
+            <AlertDescription>{item.warnings.join(" ")}</AlertDescription>
+          </Alert>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">Difficulty {item.difficulty}</Badge>
           <Badge variant="outline">{item.cognitiveSkill}</Badge>

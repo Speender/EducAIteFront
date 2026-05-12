@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 
 import { useToast } from '@/components/ToastProvider';
 import Logo from '../../components/Logo';
@@ -18,20 +18,16 @@ const Tracker: React.FC = () => {
 
     const [currentSem, setCurrentSem] = useState<string>("");
 
-    useEffect(() => {
-        if (!trackerQuery.data?.semesters.length) {
-            return;
-        }
+    const selectedSemesterLabel = useMemo(() => {
+        const semesters = trackerQuery.data?.semesters ?? [];
+        const hasMatch = semesters.some((semester) => semester.displayLabel === currentSem);
 
-        const hasMatch = trackerQuery.data.semesters.some((semester) => semester.displayLabel === currentSem);
-        if (!currentSem || !hasMatch) {
-            setCurrentSem(trackerQuery.data.semesters[0].displayLabel);
-        }
+        return hasMatch ? currentSem : semesters[0]?.displayLabel ?? "";
     }, [currentSem, trackerQuery.data]);
 
     const currentSemester = useMemo(
-        () => trackerQuery.data?.semesters.find((semester) => semester.displayLabel === currentSem) ?? null,
-        [currentSem, trackerQuery.data],
+        () => trackerQuery.data?.semesters.find((semester) => semester.displayLabel === selectedSemesterLabel) ?? null,
+        [selectedSemesterLabel, trackerQuery.data],
     );
 
     const tableData = useMemo(
@@ -82,7 +78,7 @@ const Tracker: React.FC = () => {
 
     const studentName = currentStudentQuery.data?.firstName ?? "Student";
     const semesterSelections = trackerQuery.data?.semesters.map((semester) => semester.displayLabel) ?? [];
-    const currentSemesterLabel = currentSemester?.displayLabel || currentSem || "No semester selected";
+    const currentSemesterLabel = currentSemester?.displayLabel || selectedSemesterLabel || "No semester selected";
 
     return (
         <div className="min-h-screen bg-black text-white font-sans antialiased pt-32 pb-24 px-6 relative z-10">
@@ -106,9 +102,13 @@ const Tracker: React.FC = () => {
                     </div>
                 ) : (
                     <Table
+                        key={currentSemester?.studyLoadSqid ?? currentSemesterLabel}
                         data={tableData}
                         onSaveGrades={handleSaveGrades}
                         isSaving={updateGradeMutation.isPending}
+                        honorThresholds={trackerQuery.data?.honorThresholds ?? []}
+                        noHonorLabel={trackerQuery.data?.noHonorLabel ?? "No Latin Honor"}
+                        projectionDisclaimer={trackerQuery.data?.projectionDisclaimer}
                     />
                 )}
             </div>

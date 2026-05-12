@@ -46,20 +46,38 @@ const parsedCourseDtoSchema = z.object({
   units: z.number().nonnegative(),
 });
 
+const registrationStudyLoadStudentSuggestionDtoSchema = z.object({
+  firstName: z.string().default(""),
+  middleName: z.string().default(""),
+  lastName: z.string().default(""),
+  studentIdNumber: z.string().default(""),
+  program: z.string().default(""),
+  schoolEducation: z.string().default(""),
+});
+
+const registrationStudyLoadParseResultDtoSchema = z.object({
+  parsedSemester: z.number().int().min(1).max(4),
+  parsedSchoolYearStart: z.number().int(),
+  parsedSchoolYearEnd: z.number().int(),
+  parsedCourses: z.array(parsedCourseDtoSchema),
+});
+
+export const registrationStudyLoadPreviewResponseDtoSchema = z.object({
+  suggestedStudent: registrationStudyLoadStudentSuggestionDtoSchema,
+  parseResult: registrationStudyLoadParseResultDtoSchema,
+  warnings: z.array(z.string()).default([]),
+});
+
 export const registerWithStudyLoadResponseDtoSchema = z.object({
   student: onboardingStudentDtoSchema,
   auth: onboardingAuthDtoSchema,
   studyLoad: z.object({
     uploadedStudyLoad: uploadedStudyLoadDtoSchema,
-    parseResult: z.object({
-      parsedSemester: z.number().int().min(1).max(4),
-      parsedSchoolYearStart: z.number().int(),
-      parsedSchoolYearEnd: z.number().int(),
-      parsedCourses: z.array(parsedCourseDtoSchema),
-    }),
+    parseResult: registrationStudyLoadParseResultDtoSchema,
   }),
 });
 
 export type RegisterWithStudyLoadFormInput = z.input<typeof registerWithStudyLoadFormSchema>;
 export type RegisterWithStudyLoadFormValues = z.output<typeof registerWithStudyLoadFormSchema>;
 export type RegisterWithStudyLoadResponseDto = z.output<typeof registerWithStudyLoadResponseDtoSchema>;
+export type RegistrationStudyLoadPreviewResponseDto = z.output<typeof registrationStudyLoadPreviewResponseDtoSchema>;

@@ -8,8 +8,10 @@ import {
   generateQuizItemsPreview,
   getActiveQuizSession,
   getNextQuizItem,
+  getQuizGenerationJob,
   getQuizItemsByDeck,
   restartQuizSession,
+  retryQuizGenerationHydration,
   resumeQuizSession,
   saveGeneratedQuizItems,
   startQuizSession,
@@ -22,9 +24,13 @@ import type {
   SubmitQuizAnswerRequestDto,
 } from "./dto";
 
+const terminalQuizGenerationHydrationStatuses = new Set(["Ready", "PartiallyReady", "Failed"]);
+
 export const smartQuizQueryKeys = {
   all: ["smart-quiz"] as const,
   deckItems: (deckSqid: string) => [...smartQuizQueryKeys.all, "deck", deckSqid, "items"] as const,
+  generationJob: (generationJobSqid: string) =>
+    [...smartQuizQueryKeys.all, "generation-job", generationJobSqid] as const,
   activeSession: (scopeType: 1 | 2, deckSqid?: string | null, courseSqid?: string | null) =>
     [...smartQuizQueryKeys.all, "session", "active", scopeType, deckSqid ?? "no-deck", courseSqid ?? "no-course"] as const,
   sessionNext: (sessionSqid: string) => [...smartQuizQueryKeys.all, "session", sessionSqid, "next"] as const,
@@ -45,6 +51,8 @@ export function useQuizItemsByDeckQuery(deckSqid: string | null) {
 }
 
 export function useGenerateQuizItemsPreviewMutation(deckSqid: string | null) {
+  const queryClient = useQueryClient();
+
   return useMutation({
     mutationFn: (payload: GenerateQuizItemsPreviewRequestDto) => {
       if (!deckSqid) {
@@ -52,6 +60,45 @@ export function useGenerateQuizItemsPreviewMutation(deckSqid: string | null) {
       }
 
       return generateQuizItemsPreview(deckSqid, payload);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(smartQuizQueryKeys.generationJob(response.generationJobSqid), response);
+    },
+  });
+}
+
+export function useQuizGenerationJobQuery(generationJobSqid: string | null, enabled = true) {
+  return useQuery({
+    queryKey: generationJobSqid
+      ? smartQuizQueryKeys.generationJob(generationJobSqid)
+      : [...smartQuizQueryKeys.all, "generation-job", "missing"] as const,
+    queryFn: () => {
+      if (!generationJobSqid) {
+        throw new Error("A generation job identifier is required.");
+      }
+
+      return getQuizGenerationJob(generationJobSqid);
+    },
+    enabled: Boolean(getAccessToken() && generationJobSqid && enabled),
+    refetchInterval: (query) => (
+      isQuizGenerationHydrationTerminal(query.state.data?.hydrationStatus) ? false : 2000
+    ),
+  });
+}
+
+export function useRetryQuizGenerationHydrationMutation(generationJobSqid: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => {
+      if (!generationJobSqid) {
+        throw new Error("A generation job identifier is required.");
+      }
+
+      return retryQuizGenerationHydration(generationJobSqid);
+    },
+    onSuccess: (response) => {
+      queryClient.setQueryData(smartQuizQueryKeys.generationJob(response.generationJobSqid), response);
     },
   });
 }
@@ -186,4 +233,8 @@ export function useAbandonQuizSessionMutation() {
       await queryClient.invalidateQueries({ queryKey: smartQuizQueryKeys.all });
     },
   });
+}
+
+export function isQuizGenerationHydrationTerminal(status: string | null | undefined) {
+  return Boolean(status && terminalQuizGenerationHydrationStatuses.has(status));
 }

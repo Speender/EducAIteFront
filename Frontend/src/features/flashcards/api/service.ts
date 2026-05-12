@@ -11,6 +11,7 @@ import {
   flashcardDocumentResponseDtoSchema,
   flashcardLearnSessionStartFlowResponseDtoSchema,
   flashcardLearnSessionResponseDtoSchema,
+  flashcardPdfGenerationJobResponseDtoSchema,
   flashcardResponseDtoSchema,
   flashcardReviewItemResponseDtoSchema,
   flashcardSourceExtractionResponseDtoSchema,
@@ -40,6 +41,7 @@ import {
   type FlashcardLearnSessionScopeTypeDto,
   type FlashcardLearnSessionStartFlowResponseDto,
   type FlashcardWorkspaceLatestResponseDto,
+  type FlashcardPdfGenerationJobResponseDto,
   type GeneratedFlashcardDraftDto,
   type GenerateDeckFlashcardsPdfPreviewRequestDto,
   type GenerateDeckFlashcardsPreviewRequestDto,
@@ -208,29 +210,60 @@ export async function generateDeckFlashcardsPdfPreview(
   deckSqid: string,
   payload: GenerateDeckFlashcardsPdfPreviewRequestDto,
 ) {
-  const parsedPayload = generateDeckFlashcardsPdfPreviewRequestDtoSchema.parse(payload);
-  const formData = new FormData();
-  formData.append("file", parsedPayload.file);
-  formData.append("count", String(parsedPayload.count ?? 5));
-
-  for (const itemType of parsedPayload.itemTypes ?? []) {
-    formData.append("itemTypes", String(toFlashcardItemTypeValue(itemType)));
-  }
-
-  if (parsedPayload.technicalLanguage?.trim()) {
-    formData.append("technicalLanguage", parsedPayload.technicalLanguage.trim());
-  }
-
-  if (parsedPayload.programContext?.trim()) {
-    formData.append("programContext", parsedPayload.programContext.trim());
-  }
-
+  const formData = toDeckFlashcardsPdfGenerationFormData(payload);
   const { data } = await apiClient.post(
     `/decks/${encodeURIComponent(deckSqid)}/flashcards/pdf/generate-preview`,
     formData,
   );
 
   return generateDeckFlashcardsPreviewResponseDtoSchema.parse(data);
+}
+
+export async function startDeckFlashcardsPdfGenerationJob(
+  deckSqid: string,
+  payload: GenerateDeckFlashcardsPdfPreviewRequestDto,
+) {
+  const formData = toDeckFlashcardsPdfGenerationFormData(payload);
+  const { data } = await apiClient.post(
+    `/decks/${encodeURIComponent(deckSqid)}/flashcards/pdf/generation-jobs`,
+    formData,
+  );
+
+  return flashcardPdfGenerationJobResponseDtoSchema.parse(data);
+}
+
+export async function getDeckFlashcardsPdfGenerationJob(deckSqid: string, jobSqid: string) {
+  const { data } = await apiClient.get(
+    `/decks/${encodeURIComponent(deckSqid)}/flashcards/pdf/generation-jobs/${encodeURIComponent(jobSqid)}`,
+  );
+
+  return flashcardPdfGenerationJobResponseDtoSchema.parse(data);
+}
+
+export type FlashcardGenerationJobScope = "active-recent" | "all";
+
+export async function getFlashcardGenerationJobs(
+  scope: FlashcardGenerationJobScope = "active-recent",
+): Promise<FlashcardPdfGenerationJobResponseDto[]> {
+  const { data } = await apiClient.get("/flashcards/generation-jobs", {
+    params: { scope },
+  });
+
+  return flashcardPdfGenerationJobResponseDtoSchema.array().parse(data);
+}
+
+export async function getActiveRecentFlashcardGenerationJobs(): Promise<FlashcardPdfGenerationJobResponseDto[]> {
+  return getFlashcardGenerationJobs("active-recent");
+}
+
+export async function getFlashcardGenerationJob(jobSqid: string): Promise<FlashcardPdfGenerationJobResponseDto> {
+  const { data } = await apiClient.get(`/flashcards/generation-jobs/${encodeURIComponent(jobSqid)}`);
+
+  return flashcardPdfGenerationJobResponseDtoSchema.parse(data);
+}
+
+export async function deleteFlashcardGenerationJob(jobSqid: string): Promise<void> {
+  await apiClient.delete(`/flashcards/generation-jobs/${encodeURIComponent(jobSqid)}`);
 }
 
 export async function extractDeckFlashcardSource(deckSqid: string, file: File) {
@@ -264,50 +297,13 @@ export async function saveGeneratedDeckFlashcards(
   },
 ) {
   const mappedItems = payload.items.map((item, index) => {
-    let parsedRubric: unknown = item.rubricJson;
-    let parsedValidationConfig: unknown = item.validationConfigJson;
-
     try {
-      parsedRubric = typeof item.rubricJson === "string" ? JSON.parse(item.rubricJson) : item.rubricJson;
-    } catch {
-      parsedRubric = item.rubricJson;
-    }
-
-    try {
-      parsedValidationConfig =
-        typeof item.validationConfigJson === "string"
-          ? JSON.parse(item.validationConfigJson)
-          : item.validationConfigJson;
-    } catch {
-      parsedValidationConfig = item.validationConfigJson;
-    }
-
-    try {
-      const mappedItem = toGeneratedFlashcardRequest(item);
-      console.groupCollapsed(`[flashcard-save] Draft ${index + 1} mapped`);
-      console.log("previewDraft", item);
-      console.log("parsedRubric", parsedRubric);
-      console.log("parsedValidationConfig", parsedValidationConfig);
-      console.log("saveRequestItem", mappedItem);
-      console.groupEnd();
-      return mappedItem;
+      return toGeneratedFlashcardRequest(item);
     } catch (error) {
       const message = error instanceof Error ? error.message : "Invalid generated flashcard.";
-      console.group(`[flashcard-save] Draft ${index + 1} mapping failed`);
-      console.log("previewDraft", item);
-      console.log("parsedRubric", parsedRubric);
-      console.log("parsedValidationConfig", parsedValidationConfig);
-      console.error("mappingError", error);
-      console.groupEnd();
       throw new Error(`Draft ${index + 1} (${String(item.itemType)}): ${message}`);
     }
   });
-
-  console.groupCollapsed("[flashcard-save] Final save payload");
-  console.log("sourceNoteSqid", payload.sourceNoteSqid ?? undefined);
-  console.log("sourceDocumentSqid", payload.sourceDocumentSqid ?? undefined);
-  console.log("items", mappedItems);
-  console.groupEnd();
 
   const { data } = await apiClient.post(`/decks/${encodeURIComponent(deckSqid)}/flashcards/generated`, {
     sourceNoteSqid: payload.sourceNoteSqid ?? undefined,
@@ -329,10 +325,22 @@ export async function submitAndAnalyzeFlashcard(
 ) {
   const parsedPayload = submitAndAnalyzeFlashcardRequestDtoSchema.parse(payload);
   const { data } = await apiClient.post(
-    `/Flashcard/${encodeURIComponent(flashcardSqid)}/ai/analyze-attempt`,
+    `/Flashcard/${encodeURIComponent(flashcardSqid)}/ai/evaluate-attempt`,
     toSubmitFlashcardAnswerRequest(parsedPayload),
   );
   return submitAndAnalyzeFlashcardResponseDtoSchema.parse(data);
+}
+
+export async function analyzeFlashcardCodeSubmission(
+  flashcardSqid: string,
+  payload: SubmitAndAnalyzeFlashcardRequestDto,
+) {
+  const parsedPayload = submitAndAnalyzeFlashcardRequestDtoSchema.parse(payload);
+  const { data } = await apiClient.post(
+    `/Flashcard/${encodeURIComponent(flashcardSqid)}/ai/analyze-attempt`,
+    toSubmitFlashcardAnswerRequest(parsedPayload),
+  );
+  return executeFlashcardCodeResponseDtoSchema.parse(data);
 }
 
 export async function executeFlashcardCode(payload: ExecuteFlashcardCodeRequestDto) {
@@ -450,6 +458,27 @@ function toGenerateDeckFlashcardsRequest(payload: GenerateDeckFlashcardsPreviewR
     count: payload.count ?? 5,
     programContext: payload.programContext,
   };
+}
+
+function toDeckFlashcardsPdfGenerationFormData(payload: GenerateDeckFlashcardsPdfPreviewRequestDto) {
+  const parsedPayload = generateDeckFlashcardsPdfPreviewRequestDtoSchema.parse(payload);
+  const formData = new FormData();
+  formData.append("file", parsedPayload.file);
+  formData.append("count", String(parsedPayload.count ?? 5));
+
+  for (const itemType of parsedPayload.itemTypes ?? []) {
+    formData.append("itemTypes", String(toFlashcardItemTypeValue(itemType)));
+  }
+
+  if (parsedPayload.technicalLanguage?.trim()) {
+    formData.append("technicalLanguage", parsedPayload.technicalLanguage.trim());
+  }
+
+  if (parsedPayload.programContext?.trim()) {
+    formData.append("programContext", parsedPayload.programContext.trim());
+  }
+
+  return formData;
 }
 
 function toSubmitFlashcardAnswerRequest(payload: SubmitAndAnalyzeFlashcardRequestDto | SubmitFlashcardLearnAnswerRequestDto) {

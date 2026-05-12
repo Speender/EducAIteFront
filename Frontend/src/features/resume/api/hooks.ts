@@ -305,6 +305,7 @@ export const useSaveCompanyRecommendation = (resumeSqid: string) => {
     mutationFn: (payload: SaveCompanyRecommendationRequest) => resumeService.saveCompanyRecommendation(resumeSqid, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...RESUME_KEYS.all, "company-recommendations", resumeSqid] });
+      queryClient.invalidateQueries({ queryKey: [...RESUME_KEYS.all, "job-suggestions", resumeSqid] });
     },
   });
 };
@@ -331,6 +332,7 @@ export const useUpdateCompanyRecommendationStatus = (resumeSqid: string, recomme
     mutationFn: (payload: UpdateCompanyRecommendationStatusRequest) => resumeService.updateCompanyRecommendationStatus(resumeSqid, recommendationSqid, payload),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: [...RESUME_KEYS.all, "company-recommendations", resumeSqid] });
+      queryClient.invalidateQueries({ queryKey: [...RESUME_KEYS.all, "job-suggestions", resumeSqid] });
     },
   });
 };

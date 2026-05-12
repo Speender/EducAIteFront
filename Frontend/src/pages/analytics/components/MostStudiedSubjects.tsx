@@ -1,5 +1,7 @@
 import type { StudentAnalyticsDashboardResponseDto } from '@/features/student-performance/api/dto'
 
+import { formatStudyDuration } from '../lib/formatStudyDuration'
+
 interface MostStudiedSubjectsProps {
   items: StudentAnalyticsDashboardResponseDto['learningTrendAnalysis']['items'];
 }
@@ -23,7 +25,7 @@ const MostStudiedSubjects = ({ items }: MostStudiedSubjectsProps) => {
               <div key={item.studentCourseSqid}>
                 <div className="mb-2 flex items-center justify-between gap-4 text-sm">
                   <p>{item.courseName}</p>
-                  <span className="text-white/60">{item.studyTimeHours.toFixed(1)}h</span>
+                  <span className="text-white/60">{formatStudyDuration(item.studyTimeHours)}</span>
                 </div>
                 <div className="h-3.5 overflow-hidden rounded-full bg-[#cfd8dc]">
                   <div className="h-full rounded-full bg-[#00796B] transition-all duration-500" style={{ width: `${percentage}%` }} />

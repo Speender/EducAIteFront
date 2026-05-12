@@ -59,6 +59,14 @@ const scoringSourceByValue = {
   4: "Hybrid",
 } as const;
 
+export const quizDraftValidationStatusDtoSchema = z.enum(["Ready", "Pending", "Downgraded", "Failed"]);
+export const quizGenerationHydrationStatusDtoSchema = z.enum([
+  "PreviewReady",
+  "Hydrating",
+  "Ready",
+  "PartiallyReady",
+  "Failed",
+]);
 export const quizItemTypeDtoSchema = enumValueSchema(quizItemTypeByValue);
 export const cognitiveSkillDtoSchema = enumValueSchema(cognitiveSkillByValue);
 export const learningDomainDtoSchema = enumValueSchema(learningDomainByValue);
@@ -80,6 +88,17 @@ const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
 
 const tagsJsonSchema = z.preprocess((value) => parseJsonValue(value, []), z.array(z.string()));
 const objectJsonSchema = z.preprocess((value) => parseJsonValue(value, {}), z.record(z.string(), jsonValueSchema));
+const messageListSchema = z.preprocess((value) => {
+  if (Array.isArray(value)) {
+    return value.filter((item): item is string => typeof item === "string" && item.trim().length > 0);
+  }
+
+  if (typeof value === "string" && value.trim()) {
+    return [value];
+  }
+
+  return [];
+}, z.array(z.string()));
 
 export const generatedQuizItemDraftDtoSchema = z.object({
   itemType: quizItemTypeDtoSchema,
@@ -94,6 +113,9 @@ export const generatedQuizItemDraftDtoSchema = z.object({
   tagsJson: tagsJsonSchema.default([]),
   rubricJson: objectJsonSchema.default({}),
   validationConfigJson: objectJsonSchema.default({}),
+  validationStatus: quizDraftValidationStatusDtoSchema.default("Ready"),
+  warnings: messageListSchema.default([]),
+  errors: messageListSchema.default([]),
 }).transform((item) => ({
   itemType: item.itemType,
   question: item.question,
@@ -107,6 +129,9 @@ export const generatedQuizItemDraftDtoSchema = z.object({
   tags: item.tagsJson,
   rubric: item.rubricJson,
   validationConfig: item.validationConfigJson,
+  validationStatus: item.validationStatus,
+  warnings: item.warnings,
+  errors: item.errors,
 }));
 
 export const quizItemDtoSchema = z.object({
@@ -168,17 +193,42 @@ export const generateQuizItemsPreviewRequestDtoSchema = z.object({
   itemTypes: z.array(z.number().int().min(0).max(10)).default([]),
   cognitiveSkill: z.number().int().min(0).max(5).optional(),
   difficulty: z.number().int().min(0).max(100).default(50),
-  count: z.number().int().min(1).max(50).default(5),
+  count: z.number().int().min(3).max(10).default(5),
   programContext: z.string().trim().optional(),
 });
 
-export const generateQuizItemsPreviewResponseDtoSchema = z.object({
-  deckSqid: z.string().trim().min(1),
-  learningDomain: learningDomainDtoSchema,
+export const quizGenerationJobDtoSchema = z.object({
+  generationJobSqid: z.string().trim().min(1),
+  requestedCount: z.number().int().nonnegative().default(0),
+  deckSqid: z.string().trim().min(1).optional(),
+  learningDomain: learningDomainDtoSchema.default("Unknown"),
   technicalLanguage: z.string().default(""),
-  items: z.array(generatedQuizItemDraftDtoSchema).default([]),
-  warnings: z.array(z.string()).default([]),
+  hydrationStatus: quizGenerationHydrationStatusDtoSchema.optional(),
+  status: quizGenerationHydrationStatusDtoSchema.optional(),
+  drafts: z.array(generatedQuizItemDraftDtoSchema).optional(),
+  items: z.array(generatedQuizItemDraftDtoSchema).optional(),
+  warnings: messageListSchema.default([]),
+  errors: messageListSchema.default([]),
+}).transform((job) => {
+  const drafts = job.drafts ?? job.items ?? [];
+  const hydrationStatus = job.hydrationStatus ?? job.status ?? "PreviewReady";
+
+  return {
+    generationJobSqid: job.generationJobSqid,
+    requestedCount: job.requestedCount || drafts.length,
+    deckSqid: job.deckSqid ?? null,
+    learningDomain: job.learningDomain,
+    technicalLanguage: job.technicalLanguage,
+    hydrationStatus,
+    status: hydrationStatus,
+    drafts,
+    items: drafts,
+    warnings: job.warnings,
+    errors: job.errors,
+  };
 });
+
+export const generateQuizItemsPreviewResponseDtoSchema = quizGenerationJobDtoSchema;
 
 export const saveGeneratedQuizItemsRequestDtoSchema = z.object({
   items: z.array(generatedQuizItemDraftDtoSchema).default([]),
@@ -287,10 +337,13 @@ export const submitQuizAnswerResponseDtoSchema = z.object({
 export type QuizItemTypeDto = z.output<typeof quizItemTypeDtoSchema>;
 export type CognitiveSkillDto = z.output<typeof cognitiveSkillDtoSchema>;
 export type LearningDomainDto = z.output<typeof learningDomainDtoSchema>;
+export type QuizDraftValidationStatusDto = z.output<typeof quizDraftValidationStatusDtoSchema>;
+export type QuizGenerationHydrationStatusDto = z.output<typeof quizGenerationHydrationStatusDtoSchema>;
 export type GeneratedQuizItemDraftDto = z.output<typeof generatedQuizItemDraftDtoSchema>;
 export type QuizItemDto = z.output<typeof quizItemDtoSchema>;
 export type GenerateQuizItemsPreviewRequestDto = z.output<typeof generateQuizItemsPreviewRequestDtoSchema>;
 export type GenerateQuizItemsPreviewResponseDto = z.output<typeof generateQuizItemsPreviewResponseDtoSchema>;
+export type QuizGenerationJobDto = z.output<typeof quizGenerationJobDtoSchema>;
 export type GenerateQuizItemsResponseDto = z.output<typeof generateQuizItemsResponseDtoSchema>;
 export type StartQuizSessionRequestDto = z.output<typeof startQuizSessionRequestDtoSchema>;
 export type QuizSessionDto = z.output<typeof quizSessionDtoSchema>;

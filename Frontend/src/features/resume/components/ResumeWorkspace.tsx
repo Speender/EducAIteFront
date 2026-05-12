@@ -67,7 +67,7 @@ const ResumeWorkspace = ({ resumeSqid }: ResumeWorkspaceProps) => {
   const { showSuccess } = useToast();
   const [showHistory, setShowHistory] = useState(false);
   const [isTailorOpen, setIsTailorOpen] = useState(false);
-  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(false);
+  const [isRecommendationsOpen, setIsRecommendationsOpen] = useState(() => searchParams.get("jobs") === "1");
   const [isSaving, setIsSaving] = useState(false);
 
   // --- Scaling & Zoom Logic ---
@@ -87,6 +87,12 @@ const ResumeWorkspace = ({ resumeSqid }: ResumeWorkspaceProps) => {
       setStudentWizardStep("done");
     }
   }, [isStudentMode]);
+
+  useEffect(() => {
+    if (searchParams.get("jobs") === "1") {
+      setIsRecommendationsOpen(true);
+    }
+  }, [searchParams]);
 
   const calculateAutoScale = useCallback(() => {
     const isDesktopViewport = window.innerWidth >= 1024;

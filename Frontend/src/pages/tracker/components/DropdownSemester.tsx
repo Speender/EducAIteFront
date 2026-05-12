@@ -1,4 +1,11 @@
-import { useState, useRef, useEffect } from 'react';
+import {
+    Select,
+    SelectContent,
+    SelectGroup,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from '@/components/ui/select';
 
 interface Props {
     selections: string[],
@@ -7,72 +14,31 @@ interface Props {
 }
 
 const DropdownSemester = ({ selections, currentSelection, onSelectChange }: Props) => {
-    const [isOpen, setIsOpen] = useState(false);
-    const dropdownRef = useRef<HTMLDivElement>(null);
-
-    // Close the dropdown if the user clicks outside of it
-    useEffect(() => {
-        const handleClickOutside = (event: MouseEvent) => {
-            if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-                setIsOpen(false);
-            }
-        };
-        document.addEventListener("mousedown", handleClickOutside);
-        return () => document.removeEventListener("mousedown", handleClickOutside);
-    }, []);
-
-    const handleSelect = (item: string) => {
-        onSelectChange(item);
-        setIsOpen(false);
-    };
+    const selectedValue = selections.includes(currentSelection) ? currentSelection : undefined;
 
     return (
-        <div className="relative w-full md:w-72 z-50" ref={dropdownRef}>
-            
-            {/* The Main Button */}
-            <button
-                type="button"
-                onClick={() => setIsOpen(!isOpen)}
-                className={`w-full flex justify-between items-center bg-[#111111] text-white text-sm font-medium border-[1.5px] px-5 py-3.5 rounded-xl transition-all shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:bg-white/5 ${
-                    isOpen ? 'border-[#00CEC8] shadow-[0_0_0_3px_rgba(0,206,200,0.15)]' : 'border-white/20'
-                }`}
+        <Select value={selectedValue} onValueChange={onSelectChange} disabled={selections.length === 0}>
+            <SelectTrigger className="h-12 w-full rounded-xl border-white/20 bg-[#111111] px-5 text-white shadow-[0_0_15px_rgba(0,0,0,0.5)] hover:bg-white/5 focus-visible:border-[#00CEC8] focus-visible:ring-[#00CEC8]/15 aria-expanded:border-[#00CEC8] md:w-72">
+                <SelectValue placeholder={currentSelection} />
+            </SelectTrigger>
+            <SelectContent
+                position="popper"
+                align="start"
+                className="z-50 rounded-xl border-white/10 bg-[#111111] text-white shadow-[0_10px_40px_rgba(0,0,0,0.8)]"
             >
-                <span className="truncate">{currentSelection}</span>
-                
-                {/* Arrow Icon that flips when open */}
-                <svg 
-                    width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"
-                    className={`text-white/50 transition-transform duration-300 ${isOpen ? 'rotate-180' : 'rotate-0'}`}
-                >
-                    <path d="m6 9 6 6 6-6"/>
-                </svg>
-            </button>
-
-            {/* The Dropdown Menu List */}
-            {isOpen && (
-                <div className="absolute top-full mt-2 w-full bg-[#111111] border-[1.5px] border-white/10 rounded-xl overflow-hidden shadow-[0_10px_40px_rgba(0,0,0,0.8)] animate-in fade-in slide-in-from-top-2 duration-200">
-                    
-                    {/* CHANGED: Added Tailwind classes to completely hide the scrollbar but keep scrolling active! */}
-                    <ul className="max-h-64 overflow-y-auto py-2 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
-                        
-                        {selections.map((item, i) => (
-                            <li key={i}>
-                                <button
-                                    onClick={() => handleSelect(item)}
-                                    className={`w-full text-left px-5 py-3 text-sm transition-colors ${
-                                        item === currentSelection 
-                                            ? 'bg-[#00CEC8]/10 text-[#00CEC8] font-bold' 
-                                            : 'text-white/80 hover:bg-white/10 hover:text-white'
-                                    }`}
-                                >
-                                    {item}
-                                </button>
-                            </li>
-                        ))}
-                    </ul>
-                </div>
-            )}
-        </div>
+                <SelectGroup>
+                    {selections.map((item) => (
+                        <SelectItem
+                            key={item}
+                            value={item}
+                            className="py-3 text-sm text-white/80 focus:bg-white/10 focus:text-white data-[state=checked]:bg-[#00CEC8]/10 data-[state=checked]:text-[#00CEC8]"
+                        >
+                            {item}
+                        </SelectItem>
+                    ))}
+                </SelectGroup>
+            </SelectContent>
+        </Select>
     );
 }
 

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { PlusIcon } from "lucide-react";
+import { PlusIcon, SaveIcon } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
@@ -13,6 +13,12 @@ import { Textarea } from "@/components/ui/textarea";
 type CreateMajorDeckDialogProps = {
   open: boolean;
   isSubmitting: boolean;
+  mode?: "create" | "edit";
+  initialValues?: {
+    title: string;
+    description?: string;
+    studentCourseSqid?: string | null;
+  } | null;
   courses: Array<{ value: string; label: string }>;
   onOpenChange: (open: boolean) => void;
   onSubmit: (payload: { title: string; description: string; studentCourseSqid: string | null }) => Promise<void>;
@@ -21,22 +27,18 @@ type CreateMajorDeckDialogProps = {
 export function CreateMajorDeckDialog({
   open,
   isSubmitting,
+  mode = "create",
+  initialValues = null,
   courses,
   onOpenChange,
   onSubmit,
 }: CreateMajorDeckDialogProps) {
   const isMobile = useIsMobileViewport();
-  const [title, setTitle] = useState("");
-  const [description, setDescription] = useState("");
-  const [selectedCourseSqid, setSelectedCourseSqid] = useState<string>("");
-
-  useEffect(() => {
-    if (!open) {
-      setTitle("");
-      setDescription("");
-      setSelectedCourseSqid("");
-    }
-  }, [open]);
+  const [title, setTitle] = useState(initialValues?.title ?? "");
+  const [description, setDescription] = useState(initialValues?.description ?? "");
+  const [selectedCourseSqid, setSelectedCourseSqid] = useState<string>(
+    initialValues?.studentCourseSqid ?? (mode === "edit" ? "__overall__" : ""),
+  );
 
   async function handleSubmit() {
     await onSubmit({
@@ -49,9 +51,11 @@ export function CreateMajorDeckDialog({
   const content = (
     <Card className="border-none bg-transparent py-0 shadow-none ring-0">
       <CardHeader className="px-0">
-        <CardTitle>Create major deck</CardTitle>
+        <CardTitle>{mode === "edit" ? "Edit deck" : "Create major deck"}</CardTitle>
         <CardDescription>
-          Create a top-level workspace deck, then add subdecks where quiz items will live.
+          {mode === "edit"
+            ? "Update this workspace deck name and description."
+            : "Create a top-level workspace deck, then add subdecks for focused practice."}
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4 px-0">
@@ -66,24 +70,26 @@ export function CreateMajorDeckDialog({
             placeholder="Example: Database Systems"
           />
         </div>
-        <div className="flex flex-col gap-2">
-          <label htmlFor="major-deck-course" className="text-sm text-muted-foreground">
-            Associated course
-          </label>
-          <Select value={selectedCourseSqid} onValueChange={setSelectedCourseSqid}>
-            <SelectTrigger id="major-deck-course">
-              <SelectValue placeholder="Choose a course context" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="__overall__">No course / Overall deck</SelectItem>
-              {courses.map((course) => (
-                <SelectItem key={course.value} value={course.value}>
-                  {course.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        {mode === "create" ? (
+          <div className="flex flex-col gap-2">
+            <label htmlFor="major-deck-course" className="text-sm text-muted-foreground">
+              Associated course
+            </label>
+            <Select value={selectedCourseSqid} onValueChange={setSelectedCourseSqid}>
+              <SelectTrigger id="major-deck-course">
+                <SelectValue placeholder="Choose a course context" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="__overall__">No course / Overall deck</SelectItem>
+                {courses.map((course) => (
+                  <SelectItem key={course.value} value={course.value}>
+                    {course.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        ) : null}
         <div className="flex flex-col gap-2">
           <label htmlFor="major-deck-description" className="text-sm text-muted-foreground">
             Description
@@ -104,11 +110,17 @@ export function CreateMajorDeckDialog({
         <Button
           type="button"
           onClick={handleSubmit}
-          disabled={!title.trim() || !selectedCourseSqid || isSubmitting}
+          disabled={!title.trim() || (mode === "create" && !selectedCourseSqid) || isSubmitting}
           className="bg-primary text-primary-foreground hover:bg-primary/90"
         >
-          {isSubmitting ? <Spinner data-icon="inline-start" /> : <PlusIcon data-icon="inline-start" />}
-          Create deck
+          {isSubmitting ? (
+            <Spinner data-icon="inline-start" />
+          ) : mode === "edit" ? (
+            <SaveIcon data-icon="inline-start" />
+          ) : (
+            <PlusIcon data-icon="inline-start" />
+          )}
+          {mode === "edit" ? "Save changes" : "Create deck"}
         </Button>
       </CardFooter>
     </Card>
@@ -119,8 +131,8 @@ export function CreateMajorDeckDialog({
       <Drawer open={open} onOpenChange={onOpenChange}>
         <DrawerContent className="dark bg-background text-foreground">
           <DrawerHeader>
-            <DrawerTitle>Create major deck</DrawerTitle>
-            <DrawerDescription>Add a new top-level workspace deck.</DrawerDescription>
+            <DrawerTitle>{mode === "edit" ? "Edit deck" : "Create major deck"}</DrawerTitle>
+            <DrawerDescription>{mode === "edit" ? "Update this workspace deck." : "Add a new top-level workspace deck."}</DrawerDescription>
           </DrawerHeader>
           <div className="px-4 pb-4">{content}</div>
         </DrawerContent>
@@ -132,8 +144,8 @@ export function CreateMajorDeckDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="dark max-w-xl bg-background text-foreground">
         <DialogHeader>
-          <DialogTitle>Create major deck</DialogTitle>
-          <DialogDescription>Add a new top-level workspace deck.</DialogDescription>
+          <DialogTitle>{mode === "edit" ? "Edit deck" : "Create major deck"}</DialogTitle>
+          <DialogDescription>{mode === "edit" ? "Update this workspace deck." : "Add a new top-level workspace deck."}</DialogDescription>
         </DialogHeader>
         {content}
       </DialogContent>

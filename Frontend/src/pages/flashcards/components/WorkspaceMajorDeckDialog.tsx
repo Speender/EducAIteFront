@@ -9,6 +9,7 @@ import {
   FileTextIcon,
   PlayIcon,
   PlusIcon,
+  RefreshCwIcon,
   RotateCcwIcon,
   SaveIcon,
   SendIcon,
@@ -20,6 +21,7 @@ import { useCreateWorkspaceSubDeckMutation, useWorkspaceSubDecksQuery } from "@/
 import type { FlashcardDeckResponseDto, FlashcardSubDeckResponseDto } from "@/features/flashcards/api/dto";
 import type {
   GeneratedQuizItemDraftDto,
+  QuizGenerationJobDto,
   QuizItemDto,
   QuizSessionItemDto,
   ScoringResultDto,
@@ -29,12 +31,26 @@ import {
   useActiveQuizSessionQuery,
   useGenerateQuizItemsPreviewMutation,
   useNextQuizItemQuery,
+  useQuizGenerationJobQuery,
   useQuizItemsByDeckQuery,
   useRestartQuizSessionMutation,
+  useRetryQuizGenerationHydrationMutation,
   useSaveGeneratedQuizItemsMutation,
   useStartQuizSessionMutation,
   useSubmitQuizAnswerMutation,
 } from "@/features/smart-quiz/api/hooks";
+import {
+  clampSmartQuizPreviewCount,
+  getQuizDraftValidationMeta,
+  getQuizGenerationHydrationMeta,
+  getSavableQuizDrafts,
+  getSmartQuizPreviewCountError,
+  isJavaExecutableItemType,
+  isJavaTechnicalLanguage,
+  smartQuizPreviewCountMax,
+  smartQuizPreviewCountMin,
+  toJavaSafeItemTypes,
+} from "@/features/smart-quiz/preview-generation";
 import { getErrorMessage } from "@/lib/api/errors";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
@@ -186,7 +202,7 @@ export function WorkspaceMajorDeckDialog({
               <MetricCard label="Documents" value={majorDeck.documentCount} icon={<FileTextIcon />} />
               <MetricCard label="Flashcards" value={majorDeck.flashcardCount} icon={<BookOpenIcon />} />
               <MetricCard label="Subdecks" value={summary.subDecks} icon={<BrainIcon />} />
-              <MetricCard label="Quiz Items" value={summary.quizItems} icon={<SparklesIcon />} />
+              <MetricCard label="Practice Items" value={summary.quizItems} icon={<SparklesIcon />} />
             </div>
             {majorDeck.studentCourseSqid && onOpenDocuments ? (
               <Button
@@ -223,7 +239,7 @@ export function WorkspaceMajorDeckDialog({
                           <BrainIcon />
                         </EmptyMedia>
                         <EmptyTitle>No subdecks yet</EmptyTitle>
-                        <EmptyDescription>Create the first subdeck to start generating quiz items.</EmptyDescription>
+                        <EmptyDescription>Create the first subdeck to start generating practice items.</EmptyDescription>
                       </EmptyHeader>
                     </Empty>
                   ) : (
@@ -243,7 +259,7 @@ export function WorkspaceMajorDeckDialog({
                             <div className="flex items-start justify-between gap-3">
                               <div className="min-w-0">
                                 <div className="truncate text-sm font-medium">{subDeck.title}</div>
-                                <div className="text-xs text-muted-foreground">{subDeck.quizItemCount} quiz items</div>
+                                <div className="text-xs text-muted-foreground">{subDeck.quizItemCount} practice items</div>
                               </div>
                               <Badge variant="outline">{subDeck.sourceType}</Badge>
                             </div>
@@ -357,6 +373,7 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
   const [count, setCount] = useState(5);
   const [technicalLanguage, setTechnicalLanguage] = useState("");
   const [itemTypes, setItemTypes] = useState<string[]>(defaultItemTypeValues);
+  const [generationJobSqid, setGenerationJobSqid] = useState<string | null>(null);
   const [activeSessionSqid, setActiveSessionSqid] = useState<string | null>(null);
   const [answer, setAnswer] = useState("");
   const [answerStartedAt, setAnswerStartedAt] = useState(() => Date.now());
@@ -366,22 +383,28 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
   const activeSessionQuery = useActiveQuizSessionQuery(1, subDeck.deckSqid, null, true);
   const nextItemQuery = useNextQuizItemQuery(activeSessionSqid, Boolean(activeSessionSqid));
   const generatePreviewMutation = useGenerateQuizItemsPreviewMutation(subDeck.deckSqid);
+  const generationJobQuery = useQuizGenerationJobQuery(generationJobSqid, Boolean(generationJobSqid));
+  const retryHydrationMutation = useRetryQuizGenerationHydrationMutation(generationJobSqid);
   const saveGeneratedMutation = useSaveGeneratedQuizItemsMutation(subDeck.deckSqid);
   const startSessionMutation = useStartQuizSessionMutation();
   const restartSessionMutation = useRestartQuizSessionMutation();
   const abandonSessionMutation = useAbandonQuizSessionMutation();
   const submitAnswerMutation = useSubmitQuizAnswerMutation(activeSessionSqid);
 
-  const preview = generatePreviewMutation.data;
+  const preview = generationJobQuery.data ?? generatePreviewMutation.data;
   const activeSession = activeSessionQuery.data;
   const currentNextItem = nextItemQuery.data?.nextItem ?? null;
   const currentSession = nextItemQuery.data?.session ?? activeSession ?? null;
   const progressValue = currentSession
     ? Math.min(100, ((currentSession.currentItemIndex + 1) / Math.max(currentSession.take, 1)) * 100)
     : 0;
+  const previewCountError = getSmartQuizPreviewCountError(count);
+  const isJavaContent = isJavaTechnicalLanguage(technicalLanguage);
   const currentError = useMemo(() => {
     const errors = [
       generatePreviewMutation.error,
+      generationJobQuery.error,
+      retryHydrationMutation.error,
       saveGeneratedMutation.error,
       startSessionMutation.error,
       restartSessionMutation.error,
@@ -398,7 +421,9 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
     activeSessionQuery.error,
     deckItemsQuery.error,
     generatePreviewMutation.error,
+    generationJobQuery.error,
     nextItemQuery.error,
+    retryHydrationMutation.error,
     restartSessionMutation.error,
     saveGeneratedMutation.error,
     startSessionMutation.error,
@@ -409,27 +434,43 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
     setActiveSessionSqid(activeSession?.sessionSqid ?? null);
   }, [activeSession?.sessionSqid]);
 
+  useEffect(() => {
+    if (!isJavaContent) {
+      return;
+    }
+
+    setItemTypes((current) => toJavaSafeItemTypes(current, defaultItemTypeValues));
+  }, [isJavaContent]);
+
   async function handleGeneratePreview() {
-    await generatePreviewMutation.mutateAsync({
+    const requestedCount = clampSmartQuizPreviewCount(count);
+    const requestedItemTypes = isJavaContent
+      ? toJavaSafeItemTypes(itemTypes, defaultItemTypeValues)
+      : itemTypes;
+
+    setCount(requestedCount);
+
+    const response = await generatePreviewMutation.mutateAsync({
       sourceText,
-      count,
+      count: requestedCount,
       learningDomain: 0,
       technicalLanguage: technicalLanguage.trim() || undefined,
-      itemTypes: itemTypes.map(Number),
+      itemTypes: requestedItemTypes.map(Number),
       difficulty: 50,
     });
+    setGenerationJobSqid(response.generationJobSqid);
   }
 
   async function handleSaveGenerated(items: GeneratedQuizItemDraftDto[]) {
     await saveGeneratedMutation.mutateAsync(items);
-    showSuccess("Generated quiz items saved.");
+    showSuccess("Generated practice items saved.");
   }
 
   async function handleStartSession() {
     const session = await startSessionMutation.mutateAsync({
       scopeType: 1,
       deckSqid: subDeck.deckSqid,
-      take: Math.max(1, Math.min(50, count)),
+      take: clampSmartQuizPreviewCount(count),
     });
 
     setActiveSessionSqid(session.sessionSqid);
@@ -485,7 +526,7 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
     <Card className="bg-card/80">
       <CardHeader>
         <CardTitle>{subDeck.title}</CardTitle>
-        <CardDescription>Generate quiz items, save them into this subdeck, and run adaptive practice.</CardDescription>
+        <CardDescription>Generate practice items, save them into this subdeck, and run adaptive practice.</CardDescription>
         <CardAction>
           <div className="flex gap-2">
             <Badge variant="outline">{subDeck.sourceType}</Badge>
@@ -523,11 +564,18 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
                       <Input
                         id={`count-${subDeck.deckSqid}`}
                         type="number"
-                        min={1}
-                        max={50}
+                        min={smartQuizPreviewCountMin}
+                        max={smartQuizPreviewCountMax}
                         value={count}
                         onChange={(event) => setCount(Number(event.target.value))}
+                        onBlur={() => setCount((current) => clampSmartQuizPreviewCount(current))}
+                        aria-invalid={Boolean(previewCountError)}
                       />
+                      {previewCountError ? (
+                        <p className="text-xs text-destructive">{previewCountError}</p>
+                      ) : (
+                        <p className="text-xs text-muted-foreground">Generate 3 to 10 drafts.</p>
+                      )}
                     </div>
                     <div className="flex flex-col gap-2">
                       <label htmlFor={`lang-${subDeck.deckSqid}`} className="text-sm text-muted-foreground">Technical language</label>
@@ -546,14 +594,30 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
                       variant="outline"
                       className="flex flex-wrap justify-start"
                       value={itemTypes}
-                      onValueChange={(values) => setItemTypes(values.length > 0 ? values : defaultItemTypeValues)}
+                      onValueChange={(values) => {
+                        const nextValues = values.length > 0 ? values : defaultItemTypeValues;
+                        setItemTypes(isJavaContent ? toJavaSafeItemTypes(nextValues, defaultItemTypeValues) : nextValues);
+                      }}
                     >
                       {selectableItemTypes.map((itemType) => (
-                        <ToggleGroupItem key={itemType.value} value={itemType.value}>
+                        <ToggleGroupItem
+                          key={itemType.value}
+                          value={itemType.value}
+                          disabled={isJavaContent && isJavaExecutableItemType(itemType.value)}
+                        >
                           {itemType.label}
                         </ToggleGroupItem>
                       ))}
                     </ToggleGroup>
+                    {isJavaContent ? (
+                      <Alert>
+                        <AlertCircleIcon />
+                        <AlertTitle>Java study mode</AlertTitle>
+                        <AlertDescription>
+                          Java source can generate conceptual, short-answer, or choice items. Executable Java prompts are excluded.
+                        </AlertDescription>
+                      </Alert>
+                    ) : null}
                   </div>
                   <div className="flex flex-col gap-2">
                     <label htmlFor={`source-${subDeck.deckSqid}`} className="text-sm text-muted-foreground">Source material</label>
@@ -570,7 +634,7 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
                   <Button
                     type="button"
                     onClick={handleGeneratePreview}
-                    disabled={!sourceText.trim() || generatePreviewMutation.isPending}
+                    disabled={!sourceText.trim() || Boolean(previewCountError) || generatePreviewMutation.isPending}
                   >
                     {generatePreviewMutation.isPending ? <Spinner data-icon="inline-start" /> : <SparklesIcon data-icon="inline-start" />}
                     Generate
@@ -579,12 +643,17 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
               </Card>
 
               <PreviewPanel
-                previewItems={preview?.items ?? []}
+                generationJob={preview ?? null}
+                previewItems={preview?.drafts ?? []}
                 warnings={preview?.warnings ?? []}
+                errors={preview?.errors ?? []}
                 learningDomain={preview?.learningDomain}
                 technicalLanguage={preview?.technicalLanguage}
+                isPolling={generationJobQuery.isFetching && Boolean(generationJobSqid)}
                 isLoading={generatePreviewMutation.isPending}
+                isRetrying={retryHydrationMutation.isPending}
                 isSaving={saveGeneratedMutation.isPending}
+                onRetryHydration={generationJobSqid ? () => retryHydrationMutation.mutateAsync() : undefined}
                 onSaveAll={handleSaveGenerated}
               />
             </div>
@@ -690,22 +759,38 @@ function SmartQuizDeckWorkspace({ subDeck }: { subDeck: FlashcardSubDeckResponse
 }
 
 function PreviewPanel({
+  generationJob,
   previewItems,
   warnings,
+  errors,
   learningDomain,
   technicalLanguage,
+  isPolling,
   isLoading,
+  isRetrying,
   isSaving,
+  onRetryHydration,
   onSaveAll,
 }: {
+  generationJob: QuizGenerationJobDto | null;
   previewItems: GeneratedQuizItemDraftDto[];
   warnings: string[];
+  errors: string[];
   learningDomain?: string;
   technicalLanguage?: string;
+  isPolling: boolean;
   isLoading: boolean;
+  isRetrying: boolean;
   isSaving: boolean;
+  onRetryHydration?: () => Promise<unknown>;
   onSaveAll: (items: GeneratedQuizItemDraftDto[]) => Promise<void>;
 }) {
+  const savableItems = getSavableQuizDrafts(previewItems);
+  const hydrationMeta = generationJob ? getQuizGenerationHydrationMeta(generationJob.hydrationStatus) : null;
+  const canRetryHydration = Boolean(
+    generationJob && onRetryHydration && generationJob.hydrationStatus !== "Ready",
+  );
+
   return (
     <Card size="sm" className="bg-background/60">
       <CardHeader>
@@ -713,14 +798,49 @@ function PreviewPanel({
         <CardDescription>Review the AI draft before saving it into the selected subdeck.</CardDescription>
         {previewItems.length > 0 ? (
           <CardAction>
-            <Button type="button" size="sm" onClick={() => onSaveAll(previewItems)} disabled={isSaving}>
-              {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
-              Save all
-            </Button>
+            <div className="flex flex-wrap justify-end gap-2">
+              {canRetryHydration ? (
+                <Button type="button" size="sm" variant="outline" onClick={onRetryHydration} disabled={isRetrying}>
+                  {isRetrying ? <Spinner data-icon="inline-start" /> : <RefreshCwIcon data-icon="inline-start" />}
+                  Retry hydration
+                </Button>
+              ) : null}
+              <Button
+                type="button"
+                size="sm"
+                onClick={() => onSaveAll(savableItems)}
+                disabled={isSaving || savableItems.length === 0}
+              >
+                {isSaving ? <Spinner data-icon="inline-start" /> : <SaveIcon data-icon="inline-start" />}
+                Save usable
+              </Button>
+            </div>
           </CardAction>
         ) : null}
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
+        {generationJob && hydrationMeta ? (
+          <div className="flex flex-col gap-2 rounded-lg border bg-muted/30 p-3">
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div className="flex items-center gap-2">
+                <Badge variant={hydrationMeta.variant}>{hydrationMeta.label}</Badge>
+                {isPolling ? <Spinner className="size-4" /> : null}
+              </div>
+              <span className="text-xs text-muted-foreground">
+                {previewItems.length}/{generationJob.requestedCount} drafts
+              </span>
+            </div>
+            <p className="text-sm text-muted-foreground">{hydrationMeta.description}</p>
+            <p className="truncate text-xs text-muted-foreground">Job {generationJob.generationJobSqid}</p>
+          </div>
+        ) : null}
+        {errors.length > 0 ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>Hydration errors</AlertTitle>
+            <AlertDescription>{errors.join(" ")}</AlertDescription>
+          </Alert>
+        ) : null}
         {warnings.length > 0 ? (
           <Alert>
             <AlertCircleIcon />
@@ -765,16 +885,36 @@ function PreviewPanel({
 }
 
 function QuizDraftCard({ item }: { item: GeneratedQuizItemDraftDto }) {
+  const validationMeta = getQuizDraftValidationMeta(item.validationStatus);
+
   return (
     <Card size="sm">
       <CardHeader>
         <CardTitle>{item.question}</CardTitle>
-        <CardDescription>{item.answeringGuidance || "No additional guidance supplied."}</CardDescription>
+        <CardDescription>{item.answeringGuidance || validationMeta.description}</CardDescription>
         <CardAction>
-          <Badge variant="secondary">{item.itemType}</Badge>
+          <div className="flex flex-wrap justify-end gap-2">
+            <Badge variant={validationMeta.variant}>{validationMeta.label}</Badge>
+            <Badge variant="secondary">{item.itemType}</Badge>
+          </div>
         </CardAction>
       </CardHeader>
       <CardContent className="flex flex-col gap-3">
+        <p className="text-sm text-muted-foreground">{validationMeta.description}</p>
+        {item.errors.length > 0 ? (
+          <Alert variant="destructive">
+            <AlertCircleIcon />
+            <AlertTitle>Draft unavailable</AlertTitle>
+            <AlertDescription>{item.errors.join(" ")}</AlertDescription>
+          </Alert>
+        ) : null}
+        {item.warnings.length > 0 ? (
+          <Alert>
+            <AlertCircleIcon />
+            <AlertTitle>Draft warning</AlertTitle>
+            <AlertDescription>{item.warnings.join(" ")}</AlertDescription>
+          </Alert>
+        ) : null}
         <div className="flex flex-wrap gap-2">
           <Badge variant="outline">Difficulty {item.difficulty}</Badge>
           <Badge variant="outline">{item.cognitiveSkill}</Badge>
@@ -972,7 +1112,7 @@ function DeckItemsPanel({ items, isLoading }: { items: QuizItemDto[]; isLoading:
   return (
     <Card size="sm" className="bg-background/60">
       <CardHeader>
-        <CardTitle>Saved quiz items</CardTitle>
+        <CardTitle>Saved practice items</CardTitle>
         <CardDescription>Review what already lives in the current subdeck.</CardDescription>
       </CardHeader>
       <CardContent>
@@ -987,8 +1127,8 @@ function DeckItemsPanel({ items, isLoading }: { items: QuizItemDto[]; isLoading:
               <EmptyMedia variant="icon">
                 <BrainIcon />
               </EmptyMedia>
-              <EmptyTitle>No quiz items in this subdeck</EmptyTitle>
-              <EmptyDescription>Generate and save quiz items before starting adaptive practice.</EmptyDescription>
+              <EmptyTitle>No practice items in this subdeck</EmptyTitle>
+              <EmptyDescription>Generate and save practice items before starting adaptive practice.</EmptyDescription>
             </EmptyHeader>
           </Empty>
         ) : (

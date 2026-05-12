@@ -1,5 +1,7 @@
 import type { StudentAnalyticsDashboardResponseDto } from '@/features/student-performance/api/dto'
 
+import { formatStudyDuration } from '../lib/formatStudyDuration'
+
 interface OverallPerformanceProps {
   overallPerformance: StudentAnalyticsDashboardResponseDto['overallPerformance'];
   totalStudyHours: number;
@@ -25,8 +27,8 @@ const OverallPerformance = ({ overallPerformance, totalStudyHours }: OverallPerf
           <span className="text-sm font-bold text-white">{formatPercent(overallPerformance.overallPerformanceScore)}</span>
         </div>
         <div className="flex items-center justify-between">
-          <span>Study Hours:</span>
-          <span className="text-sm font-bold text-white">{totalStudyHours.toFixed(1)}h</span>
+          <span>Study Time:</span>
+          <span className="text-sm font-bold text-white">{formatStudyDuration(totalStudyHours)}</span>
         </div>
         <div className="flex items-center justify-between">
           <span>Flashcard Accuracy:</span>

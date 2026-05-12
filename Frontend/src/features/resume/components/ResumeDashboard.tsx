@@ -15,6 +15,7 @@ import { Separator } from "@/components/ui/separator";
 import {
   Loader2,
   ArrowRight,
+  BriefcaseBusiness,
   CalendarDays,
   ChevronRight,
   RefreshCw,
@@ -61,6 +62,10 @@ const ResumeDashboard = () => {
 
   const handleOpenResume = (resumeSqid: string) => {
     navigate(`/resume/${resumeSqid}`);
+  };
+
+  const handleFindJobs = (resumeSqid: string) => {
+    navigate(`/resume/${resumeSqid}?jobs=1`);
   };
 
   return (
@@ -123,39 +128,58 @@ const ResumeDashboard = () => {
                   )}
 
                   {existingResumeCards.map((resume) => (
-                    <button
+                    <Card
                       key={resume.resumeSqid}
-                      type="button"
-                      onClick={() => handleOpenResume(resume.resumeSqid)}
-                      className="w-full text-left"
+                      className="border-white/10 bg-zinc-900/50 transition-colors hover:border-[#00CEC8]/40 hover:bg-zinc-900"
                     >
-                      <Card className="border-white/10 bg-zinc-900/50 transition-colors hover:border-[#00CEC8]/40 hover:bg-zinc-900">
-                        <div className="flex items-center justify-between gap-4 p-5">
-                          <div className="min-w-0 flex-1 space-y-2">
-                            <div className="flex items-center gap-2">
-                              <h3 className="truncate text-base font-semibold text-white">{resume.title}</h3>
-                              <Badge className="border-[#00CEC8]/30 bg-[#00CEC8]/10 text-[10px] uppercase tracking-wider text-[#00CEC8]">
-                                {resume.status}
-                              </Badge>
-                            </div>
-                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
-                              <span className="inline-flex items-center gap-1.5">
-                                <CalendarDays className="size-3.5" />
-                                Created {formatDateTime(resume.createdAt)}
-                              </span>
-                              <span className="inline-flex items-center gap-1.5">
-                                <CalendarDays className="size-3.5" />
-                                Updated {formatDateTime(resume.updatedAt)}
-                              </span>
-                            </div>
+                      <div className="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between">
+                        <button
+                          type="button"
+                          onClick={() => handleOpenResume(resume.resumeSqid)}
+                          className="min-w-0 flex-1 space-y-2 text-left"
+                        >
+                          <div className="flex items-center gap-2">
+                            <h3 className="truncate text-base font-semibold text-white">{resume.title}</h3>
+                            <Badge className="border-[#00CEC8]/30 bg-[#00CEC8]/10 text-[10px] uppercase tracking-wider text-[#00CEC8]">
+                              {resume.status}
+                            </Badge>
                           </div>
-                          <div className="inline-flex items-center gap-1 text-[#00CEC8]">
-                            <span className="text-xs font-semibold uppercase tracking-wider">Open</span>
-                            <ChevronRight className="size-4" />
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-zinc-400">
+                            <span className="inline-flex items-center gap-1.5">
+                              <CalendarDays className="size-3.5" />
+                              Created {formatDateTime(resume.createdAt)}
+                            </span>
+                            <span className="inline-flex items-center gap-1.5">
+                              <CalendarDays className="size-3.5" />
+                              Updated {formatDateTime(resume.updatedAt)}
+                            </span>
                           </div>
+                        </button>
+
+                        <div className="flex shrink-0 flex-wrap items-center gap-2">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleFindJobs(resume.resumeSqid)}
+                            className="border-[#00CEC8]/40 bg-[#00CEC8]/10 text-[#00CEC8] hover:bg-[#00CEC8]/20"
+                          >
+                            <BriefcaseBusiness data-icon="inline-start" className="size-4" />
+                            Find Jobs
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="ghost"
+                            onClick={() => handleOpenResume(resume.resumeSqid)}
+                            className="text-[#00CEC8] hover:bg-[#00CEC8]/10 hover:text-[#00CEC8]"
+                          >
+                            Open
+                            <ChevronRight data-icon="inline-end" className="size-4" />
+                          </Button>
                         </div>
-                      </Card>
-                    </button>
+                      </div>
+                    </Card>
                   ))}
                 </div>
               </ScrollArea>

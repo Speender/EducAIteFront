@@ -4,11 +4,63 @@ import logoIcon from '../../../assets/logo.svg';
 import earthBg from '../../../assets/earthbg.svg';
 import RegisterHero from './components/RegisterHero';
 import RegisterForm from './components/RegisterForm';
+import { usePreviewStudyLoadRegistrationMutation } from '@/features/onboarding/api/hooks';
+import type { RegistrationStudyLoadPreviewResponseDto } from '@/features/onboarding/api/dto';
+import { getErrorMessage } from '@/lib/api/errors';
+import { StudyLoadReviewDialog } from './components/StudyLoadReviewDialog';
 
 const Register: React.FC = () => {
   const navigate = useNavigate();
   const [selectedFile, setSelectedFile] = React.useState<File | null>(null);
   const [fileErrorMessage, setFileErrorMessage] = React.useState<string | undefined>();
+  const [isReviewOpen, setIsReviewOpen] = React.useState(false);
+  const [reviewedStudyLoad, setReviewedStudyLoad] = React.useState<RegistrationStudyLoadPreviewResponseDto | null>(null);
+  const previewMutation = usePreviewStudyLoadRegistrationMutation();
+
+  const resetStudyLoadReview = () => {
+    setIsReviewOpen(false);
+    setSelectedFile(null);
+    setReviewedStudyLoad(null);
+    previewMutation.reset();
+  };
+
+  const handleFileChange = (file: File | null) => {
+    setSelectedFile(file);
+    setReviewedStudyLoad(null);
+    setFileErrorMessage(undefined);
+    previewMutation.reset();
+
+    if (!file) {
+      setIsReviewOpen(false);
+      return;
+    }
+
+    setIsReviewOpen(true);
+    void previewMutation.mutateAsync({ studyLoadDocument: file }).catch(() => {
+      // The review dialog renders the mutation error.
+    });
+  };
+
+  const handleReviewOpenChange = (open: boolean) => {
+    if (!open && previewMutation.isPending) {
+      return;
+    }
+
+    if (!open && previewMutation.isError) {
+      resetStudyLoadReview();
+      return;
+    }
+
+    setIsReviewOpen(open);
+  };
+
+  const handleBackToUpload = resetStudyLoadReview;
+
+  const handleApplyStudyLoad = (review: RegistrationStudyLoadPreviewResponseDto) => {
+    setReviewedStudyLoad(review);
+    setIsReviewOpen(false);
+    setFileErrorMessage(undefined);
+  };
 
   return (
     <div className="min-h-screen bg-black text-white font-sans relative overflow-hidden flex flex-col antialiased">
@@ -46,18 +98,29 @@ const Register: React.FC = () => {
       <main className="flex-1 w-full max-w-[1280px] mx-auto flex flex-col md:flex-row items-center md:items-start justify-center px-6 md:px-12 lg:px-20 pt-10 md:pt-20 gap-10 md:gap-16 lg:gap-20 relative z-10">
         <RegisterHero
           selectedFile={selectedFile}
-          onFileChange={(file) => {
-            setSelectedFile(file);
-            setFileErrorMessage(undefined);
-          }}
+          isParsing={previewMutation.isPending}
+          isReviewed={Boolean(reviewedStudyLoad)}
+          onFileChange={handleFileChange}
           errorMessage={fileErrorMessage}
         />
         <RegisterForm
           selectedFile={selectedFile}
+          reviewedStudyLoad={reviewedStudyLoad}
           onMissingFile={setFileErrorMessage}
           onFileAccepted={() => setFileErrorMessage(undefined)}
         />
       </main>
+
+      <StudyLoadReviewDialog
+        open={isReviewOpen}
+        isLoading={previewMutation.isPending}
+        response={previewMutation.data}
+        errorMessage={previewMutation.isError ? getErrorMessage(previewMutation.error) : undefined}
+        fileName={selectedFile?.name}
+        onOpenChange={handleReviewOpenChange}
+        onBackToUpload={handleBackToUpload}
+        onApply={handleApplyStudyLoad}
+      />
 
       {/* --- EARTH BACKGROUND --- */}
       <div className="absolute -bottom-[10vh] left-0 right-0 w-full z-0 pointer-events-none opacity-[0.15]">

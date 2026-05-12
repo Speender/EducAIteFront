@@ -70,7 +70,7 @@ export function WorkspaceMajorDeckCard({
             Smart Quiz workspace
           </div>
           <p>
-            Open this deck to create subdecks, generate AI quiz items, and run adaptive sessions.
+            Open this deck to create subdecks, generate practice items, and run adaptive sessions.
           </p>
         </div>
       </CardContent>

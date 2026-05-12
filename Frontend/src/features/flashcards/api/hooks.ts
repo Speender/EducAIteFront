@@ -1,14 +1,17 @@
+import { useMemo } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 import { getAccessToken } from "@/lib/api/auth";
 
 import {
+  analyzeFlashcardCodeSubmission,
   abandonFlashcardLearnSession,
   createDeckFlashcard,
   createWorkspaceMajorDeck,
   createWorkspaceSubDeck,
   createWorkspaceFlashcard,
   deleteDeckFlashcard,
+  deleteFlashcardGenerationJob,
   deleteWorkspaceMajorDeck,
   executeFlashcardCode,
   extractDeckFlashcardSource,
@@ -16,11 +19,15 @@ import {
   generateDeckFlashcardsPdfPreview,
   generateDeckFlashcardsPreview,
   generateFlashcardsFromNote,
+  getActiveRecentFlashcardGenerationJobs,
   deleteWorkspaceFlashcard,
   getActiveFlashcardLearnSession,
   getDeckFlashcards,
+  getDeckFlashcardsPdfGenerationJob,
   getFlashcardBySqid,
   getFlashcardDocuments,
+  getFlashcardGenerationJob,
+  getFlashcardGenerationJobs,
   getFlashcardReviewQueue,
   getFlashcardsByDocument,
   getLatestFlashcardWorkspace,
@@ -30,17 +37,21 @@ import {
   saveGeneratedDeckFlashcards,
   startFlashcardLearnSession,
   startFlashcardLearnSessionFlow,
+  startDeckFlashcardsPdfGenerationJob,
   submitAndAnalyzeFlashcard,
   submitFlashcardLearnAnswer,
   updateDeckFlashcard,
   updateWorkspaceMajorDeck,
   updateWorkspaceFlashcard,
 } from "./service";
+import type { FlashcardGenerationJobScope } from "./service";
 import type {
   CreateFlashcardRequestDto,
   CreateWorkspaceMajorDeckRequestDto,
   CreateWorkspaceSubDeckRequestDto,
   ExecuteFlashcardCodeRequestDto,
+  FlashcardPdfGenerationJobResponseDto,
+  FlashcardPdfGenerationJobStatusDto,
   FlashcardLearnSessionScopeTypeDto,
   GeneratedFlashcardDraftDto,
   GenerateDeckFlashcardsPdfPreviewRequestDto,
@@ -58,6 +69,10 @@ export const flashcardQueryKeys = {
   workspaceLatest: () => [...flashcardQueryKeys.all, "workspace", "latest"] as const,
   subDecks: (majorDeckSqid: string) => [...flashcardQueryKeys.all, "workspace", "major-deck", majorDeckSqid, "subdecks"] as const,
   deckCards: (deckSqid: string) => [...flashcardQueryKeys.all, "deck", deckSqid, "cards"] as const,
+  pdfGenerationJob: (deckSqid: string, jobSqid: string) => [...flashcardQueryKeys.all, "deck", deckSqid, "pdf-generation-job", jobSqid] as const,
+  generationJob: (jobSqid: string) => [...flashcardQueryKeys.all, "generation-job", jobSqid] as const,
+  generationJobs: (scope: FlashcardGenerationJobScope) => [...flashcardQueryKeys.all, "generation-jobs", scope] as const,
+  activeRecentGenerationJobs: () => [...flashcardQueryKeys.all, "generation-jobs", "active-recent"] as const,
   documents: (studentCourseSqid: string) => [...flashcardQueryKeys.all, "documents", studentCourseSqid] as const,
   cards: (documentSqid: string) => [...flashcardQueryKeys.all, "cards", documentSqid] as const,
   detail: (flashcardSqid: string) => [...flashcardQueryKeys.all, "detail", flashcardSqid] as const,
@@ -68,6 +83,16 @@ export const flashcardQueryKeys = {
     documentSqid: string | null,
   ) => [...flashcardQueryKeys.all, "learn", "active", scopeType, studentCourseSqid ?? "overall", documentSqid ?? "all-documents"] as const,
 };
+
+const terminalPdfGenerationJobStatuses = new Set<FlashcardPdfGenerationJobStatusDto>([
+  "completed",
+  "failed",
+  "canceled",
+]);
+
+export function isFlashcardPdfGenerationJobActive(status: FlashcardPdfGenerationJobStatusDto) {
+  return !terminalPdfGenerationJobStatuses.has(status);
+}
 
 export function useFlashcardWorkspaceLatestQuery() {
   return useQuery({
@@ -389,6 +414,145 @@ export function useGenerateDeckFlashcardsPdfPreviewMutation(deckSqid: string | n
   });
 }
 
+export function useStartDeckFlashcardsPdfGenerationJobMutation(deckSqid: string | null) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (payload: GenerateDeckFlashcardsPdfPreviewRequestDto) => {
+      if (!deckSqid) {
+        throw new Error("A deck identifier is required.");
+      }
+
+      return startDeckFlashcardsPdfGenerationJob(deckSqid, payload);
+    },
+    onSuccess: async (job) => {
+      queryClient.setQueryData<FlashcardPdfGenerationJobResponseDto[]>(
+        flashcardQueryKeys.activeRecentGenerationJobs(),
+        (jobs = []) => [job, ...jobs.filter((item) => item.jobSqid !== job.jobSqid)],
+      );
+      queryClient.setQueryData<FlashcardPdfGenerationJobResponseDto[]>(
+        flashcardQueryKeys.generationJobs("all"),
+        (jobs = []) => [job, ...jobs.filter((item) => item.jobSqid !== job.jobSqid)],
+      );
+      await queryClient.invalidateQueries({ queryKey: flashcardQueryKeys.activeRecentGenerationJobs() });
+      await queryClient.invalidateQueries({ queryKey: flashcardQueryKeys.generationJobs("all") });
+    },
+  });
+}
+
+export function useDeckFlashcardsPdfGenerationJobQuery(deckSqid: string | null, jobSqid: string | null) {
+  return useQuery({
+    queryKey: deckSqid && jobSqid
+      ? flashcardQueryKeys.pdfGenerationJob(deckSqid, jobSqid)
+      : [...flashcardQueryKeys.all, "deck", deckSqid ?? "missing", "pdf-generation-job", "missing"] as const,
+    queryFn: () => {
+      if (!deckSqid || !jobSqid) {
+        throw new Error("A deck and generation job identifier are required.");
+      }
+
+      return getDeckFlashcardsPdfGenerationJob(deckSqid, jobSqid);
+    },
+    enabled: Boolean(getAccessToken() && deckSqid && jobSqid),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && !isFlashcardPdfGenerationJobActive(status) ? false : 2500;
+    },
+  });
+}
+
+export function useActiveRecentFlashcardGenerationJobsQuery() {
+  return useQuery({
+    queryKey: flashcardQueryKeys.activeRecentGenerationJobs(),
+    queryFn: getActiveRecentFlashcardGenerationJobs,
+    enabled: Boolean(getAccessToken()),
+    refetchInterval: (query) => {
+      const jobs = query.state.data ?? [];
+      return jobs.some((job) => isFlashcardPdfGenerationJobActive(job.status)) ? 5000 : false;
+    },
+  });
+}
+
+export function useFlashcardGenerationJobsQuery(scope: FlashcardGenerationJobScope, enabled = true) {
+  return useQuery({
+    queryKey: flashcardQueryKeys.generationJobs(scope),
+    queryFn: () => getFlashcardGenerationJobs(scope),
+    enabled: Boolean(getAccessToken() && enabled),
+    refetchInterval: (query) => {
+      const jobs = query.state.data ?? [];
+      return jobs.some((job) => isFlashcardPdfGenerationJobActive(job.status)) ? 5000 : false;
+    },
+  });
+}
+
+export function useFlashcardGenerationJobQuery(jobSqid: string | null) {
+  return useQuery({
+    queryKey: jobSqid
+      ? flashcardQueryKeys.generationJob(jobSqid)
+      : [...flashcardQueryKeys.all, "generation-job", "missing"] as const,
+    queryFn: () => {
+      if (!jobSqid) {
+        throw new Error("A generation job identifier is required.");
+      }
+
+      return getFlashcardGenerationJob(jobSqid);
+    },
+    enabled: Boolean(getAccessToken() && jobSqid),
+    refetchInterval: (query) => {
+      const status = query.state.data?.status;
+      return status && !isFlashcardPdfGenerationJobActive(status) ? false : 2500;
+    },
+  });
+}
+
+export function useDeleteFlashcardGenerationJobMutation() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: deleteFlashcardGenerationJob,
+    onSuccess: async (_, jobSqid) => {
+      queryClient.removeQueries({ queryKey: flashcardQueryKeys.generationJob(jobSqid) });
+      queryClient.setQueryData<FlashcardPdfGenerationJobResponseDto[]>(
+        flashcardQueryKeys.activeRecentGenerationJobs(),
+        (jobs = []) => jobs.filter((job) => job.jobSqid !== jobSqid),
+      );
+      queryClient.setQueryData<FlashcardPdfGenerationJobResponseDto[]>(
+        flashcardQueryKeys.generationJobs("all"),
+        (jobs = []) => jobs.filter((job) => job.jobSqid !== jobSqid),
+      );
+      await queryClient.invalidateQueries({ queryKey: flashcardQueryKeys.activeRecentGenerationJobs() });
+      await queryClient.invalidateQueries({ queryKey: flashcardQueryKeys.generationJobs("all") });
+    },
+  });
+}
+
+export function useDeckFlashcardGenerationJobsQuery(majorDeckSqid: string | null, deckSqid: string | null) {
+  const jobsQuery = useActiveRecentFlashcardGenerationJobsQuery();
+  const jobs = useMemo(() => {
+    const filteredJobs = (jobsQuery.data ?? []).filter((job) => {
+      if (majorDeckSqid && job.majorDeckSqid !== majorDeckSqid) {
+        return false;
+      }
+
+      if (deckSqid && job.deckSqid !== deckSqid) {
+        return false;
+      }
+
+      return true;
+    });
+
+    return [...filteredJobs].sort((left, right) => {
+      const leftUpdatedAt = left.updatedAtUtc?.getTime() ?? left.updatedAt?.getTime() ?? left.createdAtUtc?.getTime() ?? 0;
+      const rightUpdatedAt = right.updatedAtUtc?.getTime() ?? right.updatedAt?.getTime() ?? right.createdAtUtc?.getTime() ?? 0;
+      return rightUpdatedAt - leftUpdatedAt;
+    });
+  }, [deckSqid, jobsQuery.data, majorDeckSqid]);
+
+  return {
+    ...jobsQuery,
+    jobs,
+  };
+}
+
 export function useExtractDeckFlashcardSourceMutation(deckSqid: string | null) {
   return useMutation({
     mutationFn: (file: File) => {
@@ -593,6 +757,18 @@ export function useSubmitAndAnalyzeFlashcardMutation(flashcardSqid: string | nul
       await queryClient.invalidateQueries({ queryKey: ["student-performance", "course", result.analytics.studentCourseSqid] });
       await queryClient.invalidateQueries({ queryKey: ["student-performance", "dashboard"] });
       await queryClient.invalidateQueries({ queryKey: ["student-performance", "overall"] });
+    },
+  });
+}
+
+export function useAnalyzeFlashcardCodeSubmissionMutation(flashcardSqid: string | null) {
+  return useMutation({
+    mutationFn: (payload: SubmitAndAnalyzeFlashcardRequestDto) => {
+      if (!flashcardSqid) {
+        throw new Error("A flashcard identifier is required.");
+      }
+
+      return analyzeFlashcardCodeSubmission(flashcardSqid, payload);
     },
   });
 }

@@ -1,4 +1,18 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
+
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import {
+    Table as ShadcnTable,
+    TableBody,
+    TableCell,
+    TableHead,
+    TableHeader,
+    TableRow,
+} from '@/components/ui/table';
+import type { GradeTrackerResponseDto } from '@/features/tracker/api/dto';
+import { cn } from '@/lib/utils';
 
 type RowData = {
     studentCourseSqid: string;
@@ -19,6 +33,9 @@ interface Props {
     data: RowData[],
     onSaveGrades: (updates: GradeBatchUpdate[]) => Promise<void>,
     isSaving?: boolean,
+    honorThresholds: GradeTrackerResponseDto["honorThresholds"],
+    noHonorLabel: string,
+    projectionDisclaimer?: string,
 }
 
 type DraftGradeRow = {
@@ -26,12 +43,90 @@ type DraftGradeRow = {
     finalGrade: string;
 };
 
+type GradeStanding = "pending" | "passing" | "improved" | "increased" | "same" | "failed";
+
 const EMPTY_DRAFT: DraftGradeRow = {
     midtermGrade: "",
     finalGrade: "",
 };
 
-const formatGradeInput = (value: number | null) => value?.toFixed(2) ?? "";
+const FAILING_GRADE_MIN = 3.1;
+const PASSING_GRADE_MAX = 3;
+
+const standingStyles: Record<GradeStanding, { label: string; badge: string; value: string; input: string; row: string }> = {
+    pending: {
+        label: "Pending",
+        badge: "border-white/10 bg-white/5 text-white/45",
+        value: "text-white/45",
+        input: "border-white/10 text-white",
+        row: "hover:bg-white/[0.02]",
+    },
+    passing: {
+        label: "Passing",
+        badge: "border-[#00CEC8]/25 bg-[#00CEC8]/10 text-[#7df8f3]",
+        value: "text-[#7df8f3]",
+        input: "border-[#00CEC8]/30 text-[#7df8f3]",
+        row: "hover:bg-[#00CEC8]/[0.03]",
+    },
+    improved: {
+        label: "Improved",
+        badge: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+        value: "text-emerald-300",
+        input: "border-emerald-500/30 text-emerald-300",
+        row: "hover:bg-emerald-500/[0.03]",
+    },
+    increased: {
+        label: "Increased",
+        badge: "border-emerald-500/25 bg-emerald-500/10 text-emerald-300",
+        value: "text-emerald-300",
+        input: "border-emerald-500/30 text-emerald-300",
+        row: "hover:bg-emerald-500/[0.03]",
+    },
+    same: {
+        label: "Same",
+        badge: "border-white/15 bg-white/5 text-white/60",
+        value: "text-white/70",
+        input: "border-white/20 text-white/80",
+        row: "hover:bg-white/[0.02]",
+    },
+    failed: {
+        label: "Failed",
+        badge: "border-rose-500/25 bg-rose-500/10 text-rose-200",
+        value: "text-rose-200",
+        input: "border-rose-500/35 text-rose-200",
+        row: "hover:bg-rose-500/[0.03]",
+    },
+};
+
+const formatGradeInput = (value: number | null) => value?.toFixed(1) ?? "";
+
+const normalizeGradeDraftInput = (value: string) => {
+    const compactValue = value.replace(/\s/g, "");
+
+    if (!compactValue) {
+        return "";
+    }
+
+    if (compactValue.includes(".")) {
+        const [whole = "", decimal = ""] = compactValue.split(".");
+        const wholeDigit = whole.replace(/\D/g, "").slice(0, 1);
+        const decimalDigit = decimal.replace(/\D/g, "").slice(0, 1);
+
+        if (!wholeDigit) {
+            return "";
+        }
+
+        return decimalDigit ? `${wholeDigit}.${decimalDigit}` : `${wholeDigit}.`;
+    }
+
+    const digits = compactValue.replace(/\D/g, "").slice(0, 2);
+
+    if (digits.length < 2) {
+        return digits;
+    }
+
+    return `${digits[0]}.${digits[1]}`;
+};
 
 const parseGradeValue = (value: string) => {
     const normalized = value.trim();
@@ -44,27 +139,107 @@ const parseGradeValue = (value: string) => {
         return null;
     }
 
-    return Number(parsed.toFixed(2));
+    return Number(parsed.toFixed(1));
 };
 
 const areGradeValuesEqual = (left: number | null, right: number | null) => left === right;
 
-const Table = ({ data, onSaveGrades, isSaving = false }: Props) => {
+const isFailingGrade = (value: number | null) => value !== null && value >= FAILING_GRADE_MIN && value <= 5;
+
+const isPassingGrade = (value: number | null) => value !== null && value >= 1 && value <= PASSING_GRADE_MAX;
+
+const calculateCourseGrade = (midtermGrade: number | null, finalGrade: number | null) => {
+    if (midtermGrade !== null && finalGrade !== null) {
+        return Number(((midtermGrade + finalGrade) * 0.5).toFixed(2));
+    }
+
+    return finalGrade ?? midtermGrade;
+};
+
+const getGradeStanding = (midtermGrade: number | null, finalGrade: number | null): GradeStanding => {
+    const courseGrade = calculateCourseGrade(midtermGrade, finalGrade);
+
+    if (courseGrade === null) {
+        return "pending";
+    }
+
+    if (isFailingGrade(midtermGrade) || isFailingGrade(finalGrade) || isFailingGrade(courseGrade)) {
+        return "failed";
+    }
+
+    if (midtermGrade !== null && finalGrade !== null) {
+        if (finalGrade > midtermGrade) {
+            return "increased";
+        }
+
+        if (finalGrade === midtermGrade) {
+            return "same";
+        }
+
+        return "improved";
+    }
+
+    return isPassingGrade(courseGrade) ? "passing" : "pending";
+};
+
+const getGradeTone = (value: number | null) => {
+    if (isFailingGrade(value)) {
+        return standingStyles.failed;
+    }
+
+    if (isPassingGrade(value)) {
+        return standingStyles.passing;
+    }
+
+    return standingStyles.pending;
+};
+
+const calculateWeightedAverage = (items: Array<{ value: number | null; units: number }>) => {
+    const gradedItems = items.filter((item): item is { value: number; units: number } => item.value !== null);
+
+    if (gradedItems.length === 0) {
+        return null;
+    }
+
+    const gradedUnits = gradedItems.reduce((acc, item) => acc + item.units, 0);
+
+    if (gradedUnits > 0) {
+        const weightedTotal = gradedItems.reduce((acc, item) => acc + item.value * item.units, 0);
+        return Number((weightedTotal / gradedUnits).toFixed(2));
+    }
+
+    const total = gradedItems.reduce((acc, item) => acc + item.value, 0);
+    return Number((total / gradedItems.length).toFixed(2));
+};
+
+const formatAverage = (value: number | null) => value?.toFixed(2) ?? "-";
+
+const getProjectedHonorLabel = (
+    projectedGwa: number | null,
+    honorThresholds: GradeTrackerResponseDto["honorThresholds"],
+    noHonorLabel: string,
+) => {
+    if (projectedGwa === null) {
+        return noHonorLabel;
+    }
+
+    const threshold = honorThresholds.find(
+        (item) => projectedGwa >= item.minAverage && projectedGwa <= item.maxAverage,
+    );
+
+    return threshold?.label ?? noHonorLabel;
+};
+
+const Table = ({
+    data,
+    onSaveGrades,
+    isSaving = false,
+    honorThresholds,
+    noHonorLabel,
+    projectionDisclaimer,
+}: Props) => {
     const [isEditing, setIsEditing] = useState(false);
-    const [draftGrades, setDraftGrades] = useState<Record<string, DraftGradeRow>>({});
-
-    useEffect(() => {
-        const nextDrafts = data.reduce<Record<string, DraftGradeRow>>((acc, item) => {
-            acc[item.studentCourseSqid] = {
-                midtermGrade: formatGradeInput(item.midtermGrade),
-                finalGrade: formatGradeInput(item.finalGrade),
-            };
-            return acc;
-        }, {});
-
-        setDraftGrades(nextDrafts);
-        setIsEditing(false);
-    }, [data]);
+    const [draftGrades, setDraftGrades] = useState<Record<string, Partial<DraftGradeRow>>>({});
 
     const hasData = data.length > 0;
     const totalUnits = data.reduce((acc, item) => acc + item.units, 0).toFixed(0);
@@ -73,10 +248,17 @@ const Table = ({ data, onSaveGrades, isSaving = false }: Props) => {
         () =>
             data.map((item) => {
                 const draft = draftGrades[item.studentCourseSqid] ?? EMPTY_DRAFT;
+                const midtermValue = draft.midtermGrade ?? formatGradeInput(item.midtermGrade);
+                const finalValue = draft.finalGrade ?? formatGradeInput(item.finalGrade);
+                const parsedMidtermGrade = parseGradeValue(midtermValue);
+                const parsedFinalGrade = parseGradeValue(finalValue);
+
                 return {
                     ...item,
-                    parsedMidtermGrade: parseGradeValue(draft.midtermGrade),
-                    parsedFinalGrade: parseGradeValue(draft.finalGrade),
+                    parsedMidtermGrade,
+                    parsedFinalGrade,
+                    projectedGrade: calculateCourseGrade(parsedMidtermGrade, parsedFinalGrade),
+                    standing: getGradeStanding(parsedMidtermGrade, parsedFinalGrade),
                 };
             }),
         [data, draftGrades],
@@ -94,68 +276,45 @@ const Table = ({ data, onSaveGrades, isSaving = false }: Props) => {
                         !areGradeValuesEqual(row.finalGrade, row.parsedFinalGrade),
                 }))
                 .filter((row) => row.changed)
-                .map(({ changed: _changed, ...update }) => update),
+                .map((row) => ({
+                    studentCourseSqid: row.studentCourseSqid,
+                    midtermGrade: row.midtermGrade,
+                    finalGrade: row.finalGrade,
+                })),
         [normalizedRows],
     );
 
-    const midtermValues = normalizedRows
-        .map((item) => item.parsedMidtermGrade)
-        .filter((value): value is number => value !== null);
-    const finalValues = normalizedRows
-        .map((item) => item.parsedFinalGrade)
-        .filter((value): value is number => value !== null);
-    const gwaValues = normalizedRows
-        .map((item) => {
-            if (item.parsedMidtermGrade !== null && item.parsedFinalGrade !== null) {
-                return (item.parsedMidtermGrade + item.parsedFinalGrade) * 0.5;
-            }
+    const midtermAverageValue = calculateWeightedAverage(
+        normalizedRows.map((item) => ({ value: item.parsedMidtermGrade, units: item.units })),
+    );
+    const finalAverageValue = calculateWeightedAverage(
+        normalizedRows.map((item) => ({ value: item.parsedFinalGrade, units: item.units })),
+    );
+    const gwaAverageValue = calculateWeightedAverage(
+        normalizedRows.map((item) => ({ value: item.projectedGrade, units: item.units })),
+    );
 
-            return item.parsedFinalGrade ?? item.parsedMidtermGrade;
-        })
-        .filter((value): value is number => value !== null);
-
-    const midtermAvg = midtermValues.length > 0
-        ? (midtermValues.reduce((acc, value) => acc + value, 0) / midtermValues.length).toFixed(2)
-        : "-";
-    const finalAvg = finalValues.length > 0
-        ? (finalValues.reduce((acc, value) => acc + value, 0) / finalValues.length).toFixed(2)
-        : "-";
-    const gwaAvg = gwaValues.length > 0
-        ? (gwaValues.reduce((acc, value) => acc + value, 0) / gwaValues.length).toFixed(2)
-        : "-";
-
-    let potentialHonor = "";
-    if (gwaAvg !== "-") {
-        const gwaValue = parseFloat(gwaAvg);
-        if (gwaValue <= 1.20) {
-            potentialHonor = "SUMMA CUM LAUDE";
-        } else if (gwaValue <= 1.45) {
-            potentialHonor = "MAGNA CUM LAUDE";
-        } else if (gwaValue <= 1.75) {
-            potentialHonor = "CUM LAUDE";
-        }
-    }
+    const midtermAvg = formatAverage(midtermAverageValue);
+    const finalAvg = formatAverage(finalAverageValue);
+    const gwaAvg = formatAverage(gwaAverageValue);
+    const projectedHonor = getProjectedHonorLabel(gwaAverageValue, honorThresholds, noHonorLabel);
+    const projectedGwaTone = getGradeTone(gwaAverageValue);
+    const hasProjectedHonor = projectedHonor !== noHonorLabel;
 
     const handleDraftChange = (studentCourseSqid: string, key: keyof DraftGradeRow, value: string) => {
+        const normalizedValue = normalizeGradeDraftInput(value);
+
         setDraftGrades((current) => ({
             ...current,
             [studentCourseSqid]: {
-                ...(current[studentCourseSqid] ?? EMPTY_DRAFT),
-                [key]: value,
+                ...current[studentCourseSqid],
+                [key]: normalizedValue,
             },
         }));
     };
 
     const handleCancelEdit = () => {
-        const resetDrafts = data.reduce<Record<string, DraftGradeRow>>((acc, item) => {
-            acc[item.studentCourseSqid] = {
-                midtermGrade: formatGradeInput(item.midtermGrade),
-                finalGrade: formatGradeInput(item.finalGrade),
-            };
-            return acc;
-        }, {});
-
-        setDraftGrades(resetDrafts);
+        setDraftGrades({});
         setIsEditing(false);
     };
 
@@ -166,13 +325,15 @@ const Table = ({ data, onSaveGrades, isSaving = false }: Props) => {
         }
 
         await onSaveGrades(pendingUpdates);
+        setDraftGrades({});
+        setIsEditing(false);
     };
 
     return (
         <div className="w-full overflow-hidden rounded-3xl border border-white/10 bg-[#111111] shadow-[0_8px_30px_rgba(0,0,0,0.3)]">
             <div className="flex flex-col gap-4 border-b border-white/10 bg-white/[0.02] px-6 py-5 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.32em] text-white/40">Grade Controls</p>
+                    <p className="text-xs font-bold uppercase text-white/40">Grade Controls</p>
                     <p className="mt-2 text-sm text-white/60">
                         Edit both midterm and final grades locally, then save all changes in one action.
                     </p>
@@ -180,117 +341,160 @@ const Table = ({ data, onSaveGrades, isSaving = false }: Props) => {
 
                 <div className="flex flex-wrap items-center gap-3">
                     {!isEditing ? (
-                        <button
+                        <Button
                             type="button"
-                            onClick={() => setIsEditing(true)}
-                            className="rounded-xl border border-white/15 bg-white/5 px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white transition hover:bg-white/10"
+                            variant="outline"
+                            size="lg"
+                            onClick={() => {
+                                setDraftGrades({});
+                                setIsEditing(true);
+                            }}
+                            className="h-11 rounded-xl border-white/15 bg-white/5 px-5 text-xs font-bold uppercase text-white hover:bg-white/10"
                         >
                             Edit Grades
-                        </button>
+                        </Button>
                     ) : (
                         <>
-                            <button
+                            <Button
                                 type="button"
+                                variant="ghost"
+                                size="lg"
                                 disabled={isSaving}
                                 onClick={handleCancelEdit}
-                                className="rounded-xl border border-white/15 bg-transparent px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-white/70 transition hover:border-white/30 hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+                                className="h-11 rounded-xl border border-white/15 px-5 text-xs font-bold uppercase text-white/70 hover:border-white/30 hover:bg-white/5 hover:text-white"
                             >
                                 Cancel
-                            </button>
-                            <button
+                            </Button>
+                            <Button
                                 type="button"
+                                variant="outline"
+                                size="lg"
                                 disabled={isSaving}
                                 onClick={handleSave}
-                                className="rounded-xl border border-[#00CEC8]/40 bg-[#00CEC8]/10 px-5 py-3 text-xs font-bold uppercase tracking-[0.24em] text-[#00CEC8] transition hover:bg-[#00CEC8]/20 disabled:cursor-not-allowed disabled:opacity-50"
+                                className="h-11 rounded-xl border-[#00CEC8]/40 bg-[#00CEC8]/10 px-5 text-xs font-bold uppercase text-[#00CEC8] hover:bg-[#00CEC8]/20"
                             >
                                 {isSaving ? "Saving..." : `Save Changes${pendingUpdates.length > 0 ? ` (${pendingUpdates.length})` : ""}`}
-                            </button>
+                            </Button>
                         </>
                     )}
                 </div>
             </div>
 
-            <div className="overflow-x-auto">
-                <table className="w-full border-collapse text-left">
-                    <thead>
-                        <tr className="border-b border-white/10 bg-white/[0.02]">
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-white/40">Course</th>
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-white/40">Units</th>
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-white/40">Midterm Grade</th>
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-white/40">Final Grade</th>
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-[#00CEC8]">GWA</th>
-                            <th className="px-6 py-5 text-xs font-bold uppercase tracking-wider text-white/40">Final Remarks</th>
-                        </tr>
-                    </thead>
-                    <tbody>
+            <div className="flex flex-wrap gap-2 border-b border-white/10 bg-black/20 px-6 py-4">
+                <Badge variant="outline" className={cn("border px-3 py-1 text-[11px] font-bold uppercase", standingStyles.passing.badge)}>
+                    Passing 1.0-3.0
+                </Badge>
+                <Badge variant="outline" className={cn("border px-3 py-1 text-[11px] font-bold uppercase", standingStyles.failed.badge)}>
+                    Failed 3.1-5.0
+                </Badge>
+                <Badge variant="outline" className={cn("border px-3 py-1 text-[11px] font-bold uppercase", standingStyles.increased.badge)}>
+                    Increased
+                </Badge>
+                <Badge variant="outline" className={cn("border px-3 py-1 text-[11px] font-bold uppercase", standingStyles.same.badge)}>
+                    Same
+                </Badge>
+            </div>
+
+            <ShadcnTable className="min-w-[1040px] table-fixed border-collapse text-left">
+                    <colgroup>
+                        <col className="w-[30%]" />
+                        <col className="w-[8%]" />
+                        <col className="w-[13%]" />
+                        <col className="w-[13%]" />
+                        <col className="w-[10%]" />
+                        <col className="w-[13%]" />
+                        <col className="w-[13%]" />
+                    </colgroup>
+                    <TableHeader>
+                        <TableRow className="border-b border-white/10 bg-white/[0.02] hover:bg-white/[0.02]">
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Course</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Units</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Midterm Grade</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Final Grade</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-[#00CEC8]">GWA</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Status</TableHead>
+                            <TableHead className="px-6 py-5 text-xs font-bold uppercase text-white/40">Final Remarks</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
                         {!hasData ? (
-                            <tr>
-                                <td colSpan={6} className="px-6 py-12 text-center italic text-white/40">
+                            <TableRow className="border-white/5 hover:bg-transparent">
+                                <TableCell colSpan={7} className="px-6 py-12 text-center italic text-white/40">
                                     No courses registered for this semester yet.
-                                </td>
-                            </tr>
+                                </TableCell>
+                            </TableRow>
                         ) : (
                             normalizedRows.map((item) => {
-                                const computedGwa = item.parsedMidtermGrade !== null && item.parsedFinalGrade !== null
-                                    ? ((item.parsedMidtermGrade + item.parsedFinalGrade) * 0.5).toFixed(2)
-                                    : item.parsedFinalGrade !== null
-                                        ? item.parsedFinalGrade.toFixed(2)
-                                        : item.parsedMidtermGrade !== null
-                                            ? item.parsedMidtermGrade.toFixed(2)
-                                            : "-";
-
+                                const computedGwa = item.projectedGrade !== null ? item.projectedGrade.toFixed(2) : "-";
                                 const draft = draftGrades[item.studentCourseSqid] ?? EMPTY_DRAFT;
+                                const midtermInputValue = draft.midtermGrade ?? formatGradeInput(item.midtermGrade);
+                                const finalInputValue = draft.finalGrade ?? formatGradeInput(item.finalGrade);
+                                const rowTone = standingStyles[item.standing];
+                                const midtermTone = getGradeTone(item.parsedMidtermGrade);
+                                const finalTone = item.standing === "increased" ? standingStyles.increased : getGradeTone(item.parsedFinalGrade);
 
                                 return (
-                                    <tr key={item.studentCourseSqid} className="border-b border-white/5 transition-colors hover:bg-white/[0.02]">
-                                        <td className="px-6 py-5 font-medium text-white/90">{item.course}</td>
-                                        <td className="px-6 py-5 text-white/70">{item.units}</td>
-                                        <td className="px-6 py-5 text-white/70">
+                                    <TableRow key={item.studentCourseSqid} className={cn("border-b border-white/5 transition-colors", rowTone.row)}>
+                                        <TableCell className="whitespace-normal break-words px-6 py-5 font-medium text-white/90">{item.course}</TableCell>
+                                        <TableCell className="px-6 py-5 text-white/70">{item.units}</TableCell>
+                                        <TableCell className={cn("px-6 py-5 font-medium", midtermTone.value)}>
                                             {isEditing ? (
-                                                <input
+                                                <Input
                                                     type="text"
-                                                    value={draft.midtermGrade}
+                                                    inputMode="numeric"
+                                                    value={midtermInputValue}
                                                     onChange={(event) => handleDraftChange(item.studentCourseSqid, "midtermGrade", event.target.value)}
-                                                    className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-[#00CEC8]"
-                                                    placeholder="1.50"
+                                                    className={cn("h-9 w-24 border bg-black/30 px-3 text-sm focus-visible:border-[#00CEC8] focus-visible:ring-[#00CEC8]/20", midtermTone.input)}
+                                                    placeholder="1.0"
                                                 />
                                             ) : (
-                                                item.midtermGrade !== null ? item.midtermGrade.toFixed(2) : "-"
+                                                item.midtermGrade !== null ? formatGradeInput(item.midtermGrade) : "-"
                                             )}
-                                        </td>
-                                        <td className="px-6 py-5 text-white/70">
+                                        </TableCell>
+                                        <TableCell className={cn("px-6 py-5 font-medium", finalTone.value)}>
                                             {isEditing ? (
-                                                <input
+                                                <Input
                                                     type="text"
-                                                    value={draft.finalGrade}
+                                                    inputMode="numeric"
+                                                    value={finalInputValue}
                                                     onChange={(event) => handleDraftChange(item.studentCourseSqid, "finalGrade", event.target.value)}
-                                                    className="w-24 rounded-lg border border-white/10 bg-black/30 px-3 py-2 text-sm text-white outline-none focus:border-[#00CEC8]"
-                                                    placeholder="1.50"
+                                                    className={cn("h-9 w-24 border bg-black/30 px-3 text-sm focus-visible:border-[#00CEC8] focus-visible:ring-[#00CEC8]/20", finalTone.input)}
+                                                    placeholder="1.0"
                                                 />
                                             ) : (
-                                                item.finalGrade !== null ? item.finalGrade.toFixed(2) : "-"
+                                                item.finalGrade !== null ? formatGradeInput(item.finalGrade) : "-"
                                             )}
-                                        </td>
-                                        <td className="px-6 py-5 font-bold text-white">{computedGwa}</td>
-                                        <td className="px-6 py-5 text-white/70">{item.finalRemarks || "-"}</td>
-                                    </tr>
+                                        </TableCell>
+                                        <TableCell className={cn("px-6 py-5 font-bold", rowTone.value)}>{computedGwa}</TableCell>
+                                        <TableCell className="px-6 py-5">
+                                            <Badge variant="outline" className={cn("border px-3 py-1 text-[11px] font-bold uppercase", rowTone.badge)}>
+                                                {rowTone.label}
+                                            </Badge>
+                                        </TableCell>
+                                        <TableCell className="whitespace-normal break-words px-6 py-5 text-white/70">{item.finalRemarks || "-"}</TableCell>
+                                    </TableRow>
                                 );
                             })
                         )}
 
                         {hasData && (
-                            <tr className="border-t border-[#00CEC8]/30 bg-[#00CEC8]/10">
-                                <td className="px-6 py-5 text-sm font-bold uppercase tracking-wider text-[#00CEC8]">Averages</td>
-                                <td className="px-6 py-5 font-bold text-white">{totalUnits}</td>
-                                <td className="px-6 py-5 font-bold text-white">{midtermAvg}</td>
-                                <td className="px-6 py-5 font-bold text-white">{finalAvg}</td>
-                                <td className="px-6 py-5 text-lg font-extrabold text-[#00CEC8]">{gwaAvg}</td>
-                                <td className="px-6 py-5 font-bold tracking-wide text-yellow-400">{potentialHonor}</td>
-                            </tr>
+                            <TableRow className="border-t border-[#00CEC8]/30 bg-[#00CEC8]/10 hover:bg-[#00CEC8]/10">
+                                <TableCell className="px-6 py-5 text-sm font-bold uppercase text-[#00CEC8]">Averages</TableCell>
+                                <TableCell className="px-6 py-5 font-bold text-white">{totalUnits}</TableCell>
+                                <TableCell className="px-6 py-5 font-bold text-white">{midtermAvg}</TableCell>
+                                <TableCell className="px-6 py-5 font-bold text-white">{finalAvg}</TableCell>
+                                <TableCell className={cn("px-6 py-5 text-lg font-extrabold", projectedGwaTone.value)}>{gwaAvg}</TableCell>
+                                <TableCell className={cn("px-6 py-5 font-bold", hasProjectedHonor ? "text-[#00CEC8]" : "text-white/60")}>
+                                    <div>{projectedHonor}</div>
+                                    {projectionDisclaimer ? (
+                                        <div className="mt-1 text-xs font-medium normal-case text-white/40">{projectionDisclaimer}</div>
+                                    ) : null}
+                                </TableCell>
+                                <TableCell className="px-6 py-5 text-white/45">Projected</TableCell>
+                            </TableRow>
                         )}
-                    </tbody>
-                </table>
-            </div>
+                    </TableBody>
+            </ShadcnTable>
         </div>
     );
 };

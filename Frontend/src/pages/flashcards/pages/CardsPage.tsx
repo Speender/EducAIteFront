@@ -1,5 +1,5 @@
-import { useMemo, useState } from "react";
-import { useNavigate, useParams } from "react-router-dom";
+import { useEffect, useMemo, useState } from "react";
+import { useLocation, useNavigate, useParams } from "react-router-dom";
 import { ArrowLeftIcon } from "lucide-react";
 
 import { useToast } from "@/components/ToastProvider";
@@ -31,6 +31,7 @@ import {
 
 export function CardsPage() {
   const navigate = useNavigate();
+  const location = useLocation();
   const { showSuccess } = useToast();
   const { majorDeckSqid, deckSqid } = useParams();
   const [search, setSearch] = useState("");
@@ -42,6 +43,13 @@ export function CardsPage() {
   const cardsQuery = useDeckFlashcardsQuery(deckSqid ?? null);
   const deleteFlashcardMutation = useDeleteDeckFlashcardMutation(deckSqid ?? null);
   const startFlowMutation = useStartFlashcardLearnSessionFlowMutation();
+  const generatedFlashcardsSavedMessage =
+    typeof location.state === "object" &&
+    location.state !== null &&
+    "generatedFlashcardsSavedMessage" in location.state &&
+    typeof location.state.generatedFlashcardsSavedMessage === "string"
+      ? location.state.generatedFlashcardsSavedMessage
+      : null;
 
   const selectedMajorDeck =
     (workspaceQuery.data?.decks ?? []).find((deck) => deck.majorDeckSqid === majorDeckSqid) ?? null;
@@ -64,6 +72,24 @@ export function CardsPage() {
 
     return result;
   }, [cardsQuery.data, search, sortBy]);
+
+  useEffect(() => {
+    if (!generatedFlashcardsSavedMessage) {
+      return;
+    }
+
+    showSuccess(generatedFlashcardsSavedMessage);
+    navigate(`${location.pathname}${location.search}`, {
+      replace: true,
+      state: null,
+    });
+  }, [
+    generatedFlashcardsSavedMessage,
+    location.pathname,
+    location.search,
+    navigate,
+    showSuccess,
+  ]);
 
   const startReview = () => {
     if (!sessionDeckSqid) {

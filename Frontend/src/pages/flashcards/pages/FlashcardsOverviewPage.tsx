@@ -1,28 +1,42 @@
 import { useMemo, useState } from "react";
-import { FolderPlus } from "lucide-react";
+import { FolderPlus, PencilIcon, PlusIcon, Trash2Icon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 
 import { useCurrentStudentQuery } from "@/features/auth/api/hooks";
 import {
   useCreateWorkspaceMajorDeckMutation,
+  useCreateWorkspaceSubDeckMutation,
+  useDeleteWorkspaceMajorDeckMutation,
   useFlashcardWorkspaceLatestQuery,
+  useUpdateWorkspaceMajorDeckMutation,
 } from "@/features/flashcards/api/hooks";
 import { useStudentCourseGroupsQuery } from "@/features/student-courses/api/hooks";
 import type { FlashcardDeckResponseDto } from "@/features/flashcards/api/dto";
 import { getFlashcardMajorDeckPath } from "@/features/flashcards/routes";
 import { getAuthSession } from "@/lib/api/auth";
 import { getErrorMessage } from "@/lib/api/errors";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useToast } from "@/components/ToastProvider";
 import logo from "../../../assets/educAIte-logo.svg";
 
 import { CreateMajorDeckDialog } from "../components/CreateMajorDeckDialog";
+import { CreateSubDeckDialog } from "../components/CreateSubDeckDialog";
 import DeckCard from "../components/DeckCard";
 import SearchBar from "../components/SearchBar";
 
 export function FlashcardsOverviewPage() {
   const navigate = useNavigate();
-  const { showSuccess } = useToast();
+  const { showError, showSuccess } = useToast();
   const session = getAuthSession();
   const currentStudentQuery = useCurrentStudentQuery();
   const studentSqid = currentStudentQuery.data?.sqid ?? session?.student.sqid ?? null;
@@ -31,8 +45,14 @@ export function FlashcardsOverviewPage() {
   const createMajorDeckMutation = useCreateWorkspaceMajorDeckMutation();
   const [search, setSearch] = useState("");
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [subDeckTarget, setSubDeckTarget] = useState<FlashcardDeckResponseDto | null>(null);
+  const [editingDeck, setEditingDeck] = useState<FlashcardDeckResponseDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<FlashcardDeckResponseDto | null>(null);
+  const createSubDeckMutation = useCreateWorkspaceSubDeckMutation(subDeckTarget?.majorDeckSqid ?? null);
+  const updateMajorDeckMutation = useUpdateWorkspaceMajorDeckMutation(editingDeck?.majorDeckSqid ?? null);
+  const deleteMajorDeckMutation = useDeleteWorkspaceMajorDeckMutation();
 
-  const decks = workspaceQuery.data?.decks ?? [];
+  const decks = useMemo(() => workspaceQuery.data?.decks ?? [], [workspaceQuery.data?.decks]);
   const filteredDecks = useMemo(() => {
     const normalizedSearch = search.trim().toLowerCase();
     if (!normalizedSearch) {
@@ -53,9 +73,9 @@ export function FlashcardsOverviewPage() {
         decks: acc.decks + 1,
         flashcards: acc.flashcards + deck.flashcardCount,
         subDecks: acc.subDecks + deck.subDecks.length,
-        quizItems: acc.quizItems + deck.subDecks.reduce((sum, subDeck) => sum + subDeck.quizItemCount, 0),
+        practiceItems: acc.practiceItems + deck.subDecks.reduce((sum, subDeck) => sum + subDeck.quizItemCount, 0),
       }),
-      { decks: 0, flashcards: 0, subDecks: 0, quizItems: 0 },
+      { decks: 0, flashcards: 0, subDecks: 0, practiceItems: 0 },
     );
   }, [decks]);
 
@@ -71,9 +91,57 @@ export function FlashcardsOverviewPage() {
   );
 
   async function handleCreateMajorDeck(payload: { title: string; description: string; studentCourseSqid: string | null }) {
-    await createMajorDeckMutation.mutateAsync(payload);
-    setIsCreateDialogOpen(false);
-    showSuccess("Major deck created.");
+    try {
+      await createMajorDeckMutation.mutateAsync(payload);
+      setIsCreateDialogOpen(false);
+      showSuccess("Deck created.");
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  async function handleUpdateMajorDeck(payload: { title: string; description: string; studentCourseSqid: string | null }) {
+    try {
+      await updateMajorDeckMutation.mutateAsync({
+        title: payload.title,
+        description: payload.description,
+        studentCourseSqid: payload.studentCourseSqid,
+      });
+      setEditingDeck(null);
+      showSuccess("Deck updated.");
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  async function handleCreateSubDeck(payload: { title: string; description: string; sourceType: number }) {
+    try {
+      await createSubDeckMutation.mutateAsync({
+        ...payload,
+        difficultyFloor: 0,
+        difficultyCeiling: 100,
+        visibility: 0,
+        status: 1,
+      });
+      setSubDeckTarget(null);
+      showSuccess("Subdeck created.");
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
+  }
+
+  async function handleDeleteMajorDeck() {
+    if (!deleteTarget) {
+      return;
+    }
+
+    try {
+      await deleteMajorDeckMutation.mutateAsync(deleteTarget.majorDeckSqid);
+      setDeleteTarget(null);
+      showSuccess("Deck deleted.");
+    } catch (error) {
+      showError(getErrorMessage(error));
+    }
   }
 
   return (
@@ -92,13 +160,13 @@ export function FlashcardsOverviewPage() {
               <SidebarStat label="Total Decks" value={totals.decks} />
               <SidebarStat label="Total Flashcards" value={totals.flashcards} />
               <SidebarStat label="Subdecks" value={totals.subDecks} />
-              <SidebarStat label="Quiz Items" value={totals.quizItems} accent />
+              <SidebarStat label="Practice Items" value={totals.practiceItems} accent />
             </div>
 
             <div className="mt-10 flex items-center gap-5 rounded-3xl border border-white/5 bg-white/[0.02] p-5">
               <div className="relative flex h-16 w-16 items-center justify-center rounded-full border-[6px] border-[#00CEC8] border-r-transparent border-b-transparent -rotate-45">
                 <span className="text-sm font-black rotate-45">
-                  {totals.decks === 0 ? "0%" : `${Math.min(99, Math.max(12, Math.round((totals.quizItems / Math.max(totals.subDecks, 1)) * 10)))}%`}
+                  {totals.decks === 0 ? "0%" : `${Math.min(99, Math.max(12, Math.round((totals.practiceItems / Math.max(totals.subDecks, 1)) * 10)))}%`}
                 </span>
               </div>
               <div className="text-[11px] leading-tight">
@@ -107,7 +175,7 @@ export function FlashcardsOverviewPage() {
                   Subdecks: <span className="text-white">{totals.subDecks}</span>
                 </p>
                 <p className="text-white/50">
-                  Quiz items: <span className="text-white">{totals.quizItems}</span>
+                  Practice items: <span className="text-white">{totals.practiceItems}</span>
                 </p>
               </div>
             </div>
@@ -123,7 +191,7 @@ export function FlashcardsOverviewPage() {
                 Subdeck Containers: <span className="text-white">{totals.subDecks}</span>
               </p>
               <p>
-                Adaptive Quiz Items: <span className="text-white">{totals.quizItems}</span>
+                Practice Items: <span className="text-white">{totals.practiceItems}</span>
               </p>
             </div>
           </div>
@@ -136,7 +204,7 @@ export function FlashcardsOverviewPage() {
                 <span className="text-[#00CEC8]">My Deck</span>
               </h1>
               <p className="mt-3 text-lg text-white/40">
-                Keep the original workspace layout, then open each deck for subdecks and Smart Quiz.
+                Keep the original workspace layout, then open each deck for subdecks and smart practice.
               </p>
             </div>
 
@@ -171,6 +239,10 @@ export function FlashcardsOverviewPage() {
                 <WorkspaceDeckCard
                   key={deck.majorDeckSqid}
                   deck={deck}
+                  isMutating={deleteMajorDeckMutation.isPending}
+                  onAddSubDeck={() => setSubDeckTarget(deck)}
+                  onDeleteDeck={() => setDeleteTarget(deck)}
+                  onEditDeck={() => setEditingDeck(deck)}
                   onOpenWorkspace={() => navigate(getFlashcardMajorDeckPath(deck.majorDeckSqid))}
                 />
               ))}
@@ -180,27 +252,94 @@ export function FlashcardsOverviewPage() {
       </main>
 
       <CreateMajorDeckDialog
+        key={isCreateDialogOpen ? "create-open" : "create-closed"}
         open={isCreateDialogOpen}
         isSubmitting={createMajorDeckMutation.isPending}
         courses={courseOptions}
         onOpenChange={setIsCreateDialogOpen}
         onSubmit={handleCreateMajorDeck}
       />
+      <CreateMajorDeckDialog
+        key={`${editingDeck?.majorDeckSqid ?? "none"}-${editingDeck ? "open" : "closed"}`}
+        open={Boolean(editingDeck)}
+        mode="edit"
+        initialValues={editingDeck ? {
+          title: editingDeck.deckName,
+          description: editingDeck.description,
+          studentCourseSqid: editingDeck.studentCourseSqid ?? null,
+        } : null}
+        isSubmitting={updateMajorDeckMutation.isPending}
+        courses={courseOptions}
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingDeck(null);
+          }
+        }}
+        onSubmit={handleUpdateMajorDeck}
+      />
+      <CreateSubDeckDialog
+        open={Boolean(subDeckTarget)}
+        isSubmitting={createSubDeckMutation.isPending}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSubDeckTarget(null);
+          }
+        }}
+        onSubmit={handleCreateSubDeck}
+      />
+      <AlertDialog
+        open={Boolean(deleteTarget)}
+        onOpenChange={(open) => {
+          if (!open) {
+            setDeleteTarget(null);
+          }
+        }}
+      >
+        <AlertDialogContent className="dark bg-background text-foreground">
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete deck?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will remove {deleteTarget?.deckName ?? "this deck"} from your flashcard workspace.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteMajorDeckMutation.isPending}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              variant="destructive"
+              disabled={deleteMajorDeckMutation.isPending}
+              onClick={(event) => {
+                event.preventDefault();
+                void handleDeleteMajorDeck();
+              }}
+            >
+              Delete deck
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
 
 function WorkspaceDeckCard({
   deck,
+  isMutating,
+  onAddSubDeck,
+  onDeleteDeck,
+  onEditDeck,
   onOpenWorkspace,
 }: {
   deck: FlashcardDeckResponseDto;
+  isMutating: boolean;
+  onAddSubDeck: () => void;
+  onDeleteDeck: () => void;
+  onEditDeck: () => void;
   onOpenWorkspace: () => void;
 }) {
   const quizItemCount = deck.subDecks.reduce((sum, subDeck) => sum + subDeck.quizItemCount, 0);
   const subtitle = [
     `Subdecks: ${deck.subDecks.length}`,
-    `Quiz Items: ${quizItemCount}`,
+    `Practice Items: ${quizItemCount}`,
   ].join("  •  ");
   const meta = deck.edpCode ?? deck.sourceType;
 
@@ -209,6 +348,25 @@ function WorkspaceDeckCard({
       title={deck.deckName}
       subtitle={subtitle}
       meta={meta}
+      actions={[
+        {
+          label: "Add subdeck",
+          icon: <PlusIcon className="h-4 w-4" />,
+          onSelect: onAddSubDeck,
+        },
+        {
+          label: "Edit deck",
+          icon: <PencilIcon className="h-4 w-4" />,
+          onSelect: onEditDeck,
+        },
+        {
+          label: "Delete deck",
+          icon: <Trash2Icon className="h-4 w-4" />,
+          onSelect: onDeleteDeck,
+          disabled: isMutating,
+          variant: "destructive",
+        },
+      ]}
       onClick={onOpenWorkspace}
     />
   );

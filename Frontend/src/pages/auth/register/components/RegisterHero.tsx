@@ -4,14 +4,24 @@ import pdfIcon from '../../../../assets/PDF-Register.svg';
 
 interface RegisterHeroProps {
   selectedFile: File | null;
+  isParsing: boolean;
+  isReviewed: boolean;
   onFileChange: (file: File | null) => void;
   errorMessage?: string;
 }
 
-const RegisterHero: React.FC<RegisterHeroProps> = ({ selectedFile, onFileChange, errorMessage }) => {
+const RegisterHero: React.FC<RegisterHeroProps> = ({
+  selectedFile,
+  isParsing,
+  isReviewed,
+  onFileChange,
+  errorMessage,
+}) => {
   const handleFileSelection = (event: React.ChangeEvent<HTMLInputElement>) => {
-    const nextFile = event.target.files?.[0] ?? null;
+    const input = event.currentTarget;
+    const nextFile = input.files?.[0] ?? null;
     onFileChange(nextFile);
+    input.value = "";
   };
 
   return (
@@ -47,7 +57,9 @@ const RegisterHero: React.FC<RegisterHeroProps> = ({ selectedFile, onFileChange,
 
         {selectedFile ? (
           <div className="mt-6 rounded-2xl border border-[#00CEC8]/30 bg-[#00CEC8]/10 px-4 py-3 text-sm text-white/90">
-            <p className="font-semibold text-[#7ef7f3]">Studyload ready</p>
+            <p className="font-semibold text-[#7ef7f3]">
+              {isParsing ? 'Parsing studyload...' : isReviewed ? 'Studyload reviewed' : 'Studyload ready'}
+            </p>
             <p className="mt-1 break-all text-white/70">{selectedFile.name}</p>
           </div>
         ) : (
@@ -71,6 +83,7 @@ const RegisterHero: React.FC<RegisterHeroProps> = ({ selectedFile, onFileChange,
           accept=".pdf,application/pdf"
           className="absolute inset-0 opacity-0 cursor-pointer"
           onChange={handleFileSelection}
+          disabled={isParsing}
         />
       </div>
 

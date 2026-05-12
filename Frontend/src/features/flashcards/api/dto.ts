@@ -66,6 +66,20 @@ const jsonValueSchema: z.ZodType<unknown> = z.lazy(() =>
   ]),
 );
 
+const nullableTextDtoSchema = z
+  .union([z.string(), z.null(), z.undefined()])
+  .transform((value) => (typeof value === "string" ? value : ""));
+
+const nullableTrimmedTextDtoSchema = nullableTextDtoSchema.transform((value) => value.trim());
+
+const stringArrayDtoSchema = z
+  .array(z.string())
+  .nullable()
+  .optional()
+  .transform((value) => value ?? []);
+
+const jsonFieldDtoSchema = jsonValueSchema.optional();
+
 export const flashcardSubDeckResponseDtoSchema = z.object({
   deckSqid: z.string().trim().min(1),
   title: z.string().trim().min(1),
@@ -80,6 +94,7 @@ export const flashcardSubDeckResponseDtoSchema = z.object({
 export const flashcardDeckResponseDtoSchema = z.object({
   majorDeckSqid: z.string().trim().min(1),
   deckName: z.string().trim().min(1),
+  description: nullableTrimmedTextDtoSchema,
   studentCourseSqid: z.string().trim().min(1).nullable().optional(),
   edpCode: z.string().trim().min(1).nullable().optional(),
   sourceType: majorDeckSourceTypeDtoSchema,
@@ -126,12 +141,15 @@ export const flashcardDocumentResponseDtoSchema = z.object({
 export const flashcardResponseDtoSchema = z.object({
   sqid: z.string().trim().min(1),
   question: z.string().trim().min(1),
-  answer: z.string().trim().min(1),
-  conceptExplanation: z.string(),
-  answeringGuidance: z.string(),
-  acceptedAnswerAliases: z.array(z.string()),
-  noteSqid: z.string().default(""),
-  documentSqid: z.string().default(""),
+  answer: nullableTextDtoSchema,
+  expectedAnswer: nullableTextDtoSchema,
+  expectedOutput: nullableTextDtoSchema,
+  conceptExplanation: nullableTextDtoSchema,
+  explanation: nullableTextDtoSchema,
+  answeringGuidance: nullableTextDtoSchema,
+  acceptedAnswerAliases: stringArrayDtoSchema,
+  noteSqid: nullableTrimmedTextDtoSchema,
+  documentSqid: nullableTrimmedTextDtoSchema,
   deckSqid: z.string().trim().min(1).nullable().optional(),
   sourceNoteSqid: z.string().trim().min(1).nullable().optional(),
   sourceDocumentSqid: z.string().trim().min(1).nullable().optional(),
@@ -139,13 +157,17 @@ export const flashcardResponseDtoSchema = z.object({
   difficulty: z.number().int().min(0).max(100).default(50),
   cognitiveSkill: cognitiveSkillDtoSchema.default("Recall"),
   learningDomain: learningDomainDtoSchema.default("Unknown"),
-  technicalLanguage: z.string().default(""),
-  tagsJson: z.string().default("[]"),
-  rubricJson: z.string().default("{}"),
-  validationConfigJson: z.string().default("{}"),
+  technicalLanguage: nullableTrimmedTextDtoSchema,
+  tagsJson: jsonFieldDtoSchema.transform((value) => stringifyJsonField(value, [])),
+  rubricJson: jsonFieldDtoSchema.transform((value) => stringifyJsonField(value, {})),
+  validationConfigJson: jsonFieldDtoSchema.transform((value) => stringifyJsonField(value, {})),
   createdAt: z.coerce.date(),
   updatedAt: z.coerce.date(),
-});
+}).transform(({ expectedAnswer, expectedOutput, explanation, ...item }) => ({
+  ...item,
+  answer: firstNonBlank(item.answer, expectedAnswer, expectedOutput),
+  conceptExplanation: firstNonBlank(item.conceptExplanation, explanation),
+}));
 
 export const createFlashcardRequestDtoSchema = z.object({
   question: z.string().trim().min(1).max(1000),
@@ -350,6 +372,17 @@ export const flashcardFrontendReviewResponseDtoSchema = z.object({
   }).nullable().optional(),
 });
 
+export const flashcardStudyCoachRecapResponseDtoSchema = z.object({
+  headline: z.string().trim().min(1).default("Session complete"),
+  improved: z.array(z.string().trim().min(1)).default([]),
+  stillWeak: z.array(z.string().trim().min(1)).default([]),
+  nextStep: z.string().trim().min(1).default("Review your weakest cards next."),
+  cheerLine: z.string().trim().min(1).default("Good job. AImpatin is ready for the next round."),
+  quickPhrases: z.array(z.string().trim().min(1)).default(["Good job.", "Nice progress.", "Review this next."]),
+  tone: z.enum(["strong", "mixed", "weak"]).default("mixed"),
+  mascotEmotion: z.enum(["happy", "proud", "thinking", "sad", "encouraging"]).default("encouraging"),
+});
+
 export const submitAndAnalyzeFlashcardResponseDtoSchema = z.object({
   attempt: flashcardAttemptResultResponseDtoSchema,
   analytics: studentFlashcardAnalyticsResponseDtoSchema,
@@ -440,6 +473,7 @@ export const submitFlashcardLearnAnswerResponseDtoSchema = z.object({
   session: flashcardLearnSessionResponseDtoSchema,
   answer: flashcardLearnAnswerResultResponseDtoSchema,
   frontendReview: flashcardFrontendReviewResponseDtoSchema,
+  studyCoachRecap: flashcardStudyCoachRecapResponseDtoSchema.nullable().optional(),
 });
 
 export const generateDeckFlashcardsPreviewRequestDtoSchema = z.object({
@@ -461,6 +495,11 @@ export const generateDeckFlashcardsPdfPreviewRequestDtoSchema = z.object({
   programContext: z.string().trim().nullable().optional(),
 });
 
+export const flashcardPdfGenerationJobStatusDtoSchema = z.preprocess(
+  (value) => (typeof value === "string" ? value.toLowerCase() : value),
+  z.enum(["queued", "running", "processing", "completed", "failed", "canceled"]),
+);
+
 export const generateDeckFlashcardsPreviewResponseDtoSchema = z.object({
   extractedText: z.string().default(""),
   deckSqid: z.string().trim().min(1),
@@ -478,10 +517,115 @@ export const generateDeckFlashcardsPreviewResponseDtoSchema = z.object({
   warnings: z.array(z.string()).default([]),
 });
 
+export const flashcardPdfGenerationJobResponseDtoSchema = z.object({
+  jobSqid: z.string().trim().min(1),
+  deckSqid: z.string().trim().min(1).nullable().optional(),
+  majorDeckSqid: z.string().trim().min(1).nullable().optional(),
+  fileName: z.string().default(""),
+  status: flashcardPdfGenerationJobStatusDtoSchema,
+  progressPercent: z.number().min(0).max(100).catch(0),
+  stage: z.string().default(""),
+  message: z.string().default(""),
+  errorMessage: z.string().nullable().optional(),
+  createdAt: z.coerce.date().nullable().optional(),
+  updatedAt: z.coerce.date().nullable().optional(),
+  startedAt: z.coerce.date().nullable().optional(),
+  canceledAt: z.coerce.date().nullable().optional(),
+  completedAt: z.coerce.date().nullable().optional(),
+  archivedAt: z.coerce.date().nullable().optional(),
+  isArchived: z.boolean().catch(false),
+  createdAtUtc: z.coerce.date().nullable().optional(),
+  updatedAtUtc: z.coerce.date().nullable().optional(),
+  startedAtUtc: z.coerce.date().nullable().optional(),
+  canceledAtUtc: z.coerce.date().nullable().optional(),
+  completedAtUtc: z.coerce.date().nullable().optional(),
+  archivedAtUtc: z.coerce.date().nullable().optional(),
+  preview: generateDeckFlashcardsPreviewResponseDtoSchema.nullable().optional(),
+  result: generateDeckFlashcardsPreviewResponseDtoSchema.nullable().optional(),
+  generatedPreview: generateDeckFlashcardsPreviewResponseDtoSchema.nullable().optional(),
+}).transform((job) => ({
+  ...job,
+  preview: job.preview ?? job.result ?? job.generatedPreview ?? null,
+  createdAtUtc: job.createdAtUtc ?? job.createdAt ?? null,
+  updatedAtUtc: job.updatedAtUtc ?? job.updatedAt ?? null,
+  startedAtUtc: job.startedAtUtc ?? job.startedAt ?? null,
+  canceledAtUtc: job.canceledAtUtc ?? job.canceledAt ?? null,
+  completedAtUtc: job.completedAtUtc ?? job.completedAt ?? null,
+  archivedAtUtc: job.archivedAtUtc ?? job.archivedAt ?? null,
+}));
+
+const saveFeedbackCountDtoSchema = z.coerce.number().int().nonnegative().nullable().optional();
+
+export const generatedFlashcardsSaveFeedbackDtoSchema = z.object({
+  message: z.string().trim().nullable().optional(),
+  Message: z.string().trim().nullable().optional(),
+  operationMessage: z.string().trim().nullable().optional(),
+  OperationMessage: z.string().trim().nullable().optional(),
+  operationStatus: z.string().trim().nullable().optional(),
+  OperationStatus: z.string().trim().nullable().optional(),
+  requestedCount: saveFeedbackCountDtoSchema,
+  RequestedCount: saveFeedbackCountDtoSchema,
+  savedCount: saveFeedbackCountDtoSchema,
+  SavedCount: saveFeedbackCountDtoSchema,
+  maxLimitEnforced: z.boolean().nullable().optional(),
+  MaxLimitEnforced: z.boolean().nullable().optional(),
+  previewSource: z.string().trim().nullable().optional(),
+  PreviewSource: z.string().trim().nullable().optional(),
+  targetDeckSqid: z.string().trim().nullable().optional(),
+  TargetDeckSqid: z.string().trim().nullable().optional(),
+  firstSavedItemSqid: z.string().trim().nullable().optional(),
+  FirstSavedItemSqid: z.string().trim().nullable().optional(),
+  firstSavedSqid: z.string().trim().nullable().optional(),
+  FirstSavedSqid: z.string().trim().nullable().optional(),
+  lastSavedItemSqid: z.string().trim().nullable().optional(),
+  LastSavedItemSqid: z.string().trim().nullable().optional(),
+  lastSavedSqid: z.string().trim().nullable().optional(),
+  LastSavedSqid: z.string().trim().nullable().optional(),
+  createdCount: saveFeedbackCountDtoSchema,
+  CreatedCount: saveFeedbackCountDtoSchema,
+  skippedCount: saveFeedbackCountDtoSchema,
+  SkippedCount: saveFeedbackCountDtoSchema,
+  duplicateCount: saveFeedbackCountDtoSchema,
+  DuplicateCount: saveFeedbackCountDtoSchema,
+  failedCount: saveFeedbackCountDtoSchema,
+  FailedCount: saveFeedbackCountDtoSchema,
+  warningCount: saveFeedbackCountDtoSchema,
+  WarningCount: saveFeedbackCountDtoSchema,
+}).transform((feedback) => ({
+  message: feedback.operationMessage ?? feedback.OperationMessage ?? feedback.message ?? feedback.Message ?? null,
+  operationMessage: feedback.operationMessage ?? feedback.OperationMessage ?? feedback.message ?? feedback.Message ?? null,
+  operationStatus: feedback.operationStatus ?? feedback.OperationStatus ?? null,
+  requestedCount: feedback.requestedCount ?? feedback.RequestedCount ?? null,
+  savedCount: feedback.savedCount ?? feedback.SavedCount ?? null,
+  maxLimitEnforced: feedback.maxLimitEnforced ?? feedback.MaxLimitEnforced ?? null,
+  previewSource: feedback.previewSource ?? feedback.PreviewSource ?? null,
+  targetDeckSqid: feedback.targetDeckSqid ?? feedback.TargetDeckSqid ?? null,
+  firstSavedItemSqid: feedback.firstSavedItemSqid
+    ?? feedback.FirstSavedItemSqid
+    ?? feedback.firstSavedSqid
+    ?? feedback.FirstSavedSqid
+    ?? null,
+  lastSavedItemSqid: feedback.lastSavedItemSqid
+    ?? feedback.LastSavedItemSqid
+    ?? feedback.lastSavedSqid
+    ?? feedback.LastSavedSqid
+    ?? null,
+  createdCount: feedback.createdCount ?? feedback.CreatedCount ?? null,
+  skippedCount: feedback.skippedCount ?? feedback.SkippedCount ?? null,
+  duplicateCount: feedback.duplicateCount ?? feedback.DuplicateCount ?? null,
+  failedCount: feedback.failedCount ?? feedback.FailedCount ?? null,
+  warningCount: feedback.warningCount ?? feedback.WarningCount ?? null,
+}));
+
 export const generateDeckFlashcardsResponseDtoSchema = z.object({
   items: z.array(flashcardResponseDtoSchema).default([]),
   warnings: z.array(z.string()).default([]),
-});
+  saveFeedback: generatedFlashcardsSaveFeedbackDtoSchema.nullable().optional(),
+  SaveFeedback: generatedFlashcardsSaveFeedbackDtoSchema.nullable().optional(),
+}).transform(({ SaveFeedback, ...response }) => ({
+  ...response,
+  saveFeedback: response.saveFeedback ?? SaveFeedback ?? null,
+}));
 
 export const flashcardSourceExtractionResponseDtoSchema = z.object({
   fileName: z.string().default(""),
@@ -571,9 +715,13 @@ export type SubmitFlashcardLearnAnswerRequestDto = z.input<typeof submitFlashcar
 export type FlashcardLearnAnswerResultResponseDto = z.output<typeof flashcardLearnAnswerResultResponseDtoSchema>;
 export type SubmitFlashcardLearnAnswerResponseDto = z.output<typeof submitFlashcardLearnAnswerResponseDtoSchema>;
 export type FlashcardFrontendReviewResponseDto = z.output<typeof flashcardFrontendReviewResponseDtoSchema>;
+export type FlashcardStudyCoachRecapResponseDto = z.output<typeof flashcardStudyCoachRecapResponseDtoSchema>;
 export type GenerateDeckFlashcardsPreviewRequestDto = z.input<typeof generateDeckFlashcardsPreviewRequestDtoSchema>;
 export type GenerateDeckFlashcardsPdfPreviewRequestDto = z.input<typeof generateDeckFlashcardsPdfPreviewRequestDtoSchema>;
 export type GenerateDeckFlashcardsPreviewResponseDto = z.output<typeof generateDeckFlashcardsPreviewResponseDtoSchema>;
+export type FlashcardPdfGenerationJobStatusDto = z.output<typeof flashcardPdfGenerationJobStatusDtoSchema>;
+export type FlashcardPdfGenerationJobResponseDto = z.output<typeof flashcardPdfGenerationJobResponseDtoSchema>;
+export type GeneratedFlashcardsSaveFeedbackDto = z.output<typeof generatedFlashcardsSaveFeedbackDtoSchema>;
 export type GenerateDeckFlashcardsResponseDto = z.output<typeof generateDeckFlashcardsResponseDtoSchema>;
 export type FlashcardSourceExtractionResponseDto = z.output<typeof flashcardSourceExtractionResponseDtoSchema>;
 export type ExecuteFlashcardCodeRequestDto = z.input<typeof executeFlashcardCodeRequestDtoSchema>;
@@ -656,4 +804,9 @@ function stringifyJsonField(value: unknown, fallback: unknown) {
   }
 
   return JSON.stringify(value ?? fallback);
+}
+
+function firstNonBlank(...values: string[]) {
+  const match = values.find((value) => value.trim().length > 0);
+  return match?.trim() ?? "";
 }

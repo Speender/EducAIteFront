@@ -80,10 +80,10 @@ export function DecksPage() {
               title={selectedDeck?.deckName ?? "Workspace Deck"}
               className="mb-2 truncate text-3xl md:text-4xl font-bold tracking-tight text-[#00CEC8]"
             >
-              {selectedDeck?.deckName ?? "Workspace Deck"} <span className="text-[#FF4500]">🔥 13</span>
+              {selectedDeck?.deckName ?? "Workspace Deck"} <span className="text-[#FF4500]"></span>
             </h1>
             <p className="text-base md:text-lg font-medium text-white/50">
-              Open a subdeck to manage quiz items and adaptive quiz sessions.
+              Open a subdeck to manage practice items and adaptive sessions.
             </p>
           </div>
 
@@ -126,7 +126,7 @@ export function DecksPage() {
               <DeckCard
                 key={subDeck.deckSqid}
                 title={subDeck.title}
-                subtitle={`Quiz Items: ${subDeck.quizItemCount}`}
+                subtitle={`Practice Items: ${subDeck.quizItemCount}`}
                 meta={subDeck.sourceType}
                 onClick={() =>
                   navigate(

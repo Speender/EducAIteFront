@@ -105,6 +105,57 @@ export const companyRecommendationSearchRequestSchema = z.object({
 export type CompanyRecommendationSearchRequest = z.infer<typeof companyRecommendationSearchRequestSchema>;
 export type JobSuggestionSearchRequest = CompanyRecommendationSearchRequest;
 
+export const companyRecommendationMatchIntelligenceSchema = z.object({
+  jobUnderstanding: z.object({
+    requiredSkills: z.array(z.string()),
+    niceToHaveSkills: z.array(z.string()),
+    experienceLevel: z.string().nullable().optional(),
+    confidence: z.number(),
+  }),
+  fitBreakdown: z.object({
+    skillMatch: z.number(),
+    roleMatch: z.number(),
+    locationCompatibility: z.number(),
+    educationMatch: z.number(),
+    careerGoalMatch: z.number(),
+    freshnessConfidence: z.number(),
+  }),
+  matchReasons: z.array(z.string()),
+  gapReasons: z.array(z.string()),
+  recommendedActions: z.array(z.object({
+    type: z.enum([
+      "resume_update",
+      "flashcard_generation",
+      "certificate_suggestion",
+      "project_recommendation",
+      "learning_action",
+    ]),
+    label: z.string(),
+  })),
+  roadmap: z.object({
+    summary: z.string(),
+    targetFitScore: z.number().nullable().optional(),
+    generatedFrom: z.enum(["gemini", "fallback"]),
+    items: z.array(z.object({
+      timeline: z.enum(["today", "this_week", "this_month", "next_60_days"]),
+      priority: z.enum(["high", "medium", "low"]),
+      skill: z.string().nullable().optional(),
+      title: z.string(),
+      reason: z.string(),
+      actions: z.array(z.string()),
+      outcome: z.string(),
+      resources: z.array(z.object({
+        title: z.string(),
+        url: z.string().url().nullable().optional(),
+        type: z.enum(["article", "course", "documentation", "video", "practice", "certificate", "job_posting"]),
+      })),
+    })),
+    betterFitRoles: z.array(z.string()),
+  }).nullable().optional(),
+  aiConfidence: z.number(),
+});
+export type CompanyRecommendationMatchIntelligence = z.infer<typeof companyRecommendationMatchIntelligenceSchema>;
+
 export const companyRecommendationItemResponseSchema = z.object({
   recommendationSqid: z.string().nullable().optional(),
   companyName: z.string(),
@@ -121,6 +172,7 @@ export const companyRecommendationItemResponseSchema = z.object({
   sourceUrl: z.string().url(),
   sourceDomain: z.string().nullable().optional(),
   recommendedAction: z.string(),
+  matchIntelligence: companyRecommendationMatchIntelligenceSchema.nullable().optional(),
   status: z.string().nullable().optional(),
   savedAt: z.string().nullable().optional(),
   searchedAt: z.string().nullable().optional(),
@@ -150,6 +202,7 @@ export const saveCompanyRecommendationRequestSchema = z.object({
   employmentType: z.string().nullable().optional(),
   sourceUrl: z.string().url(),
   recommendedAction: z.string(),
+  matchIntelligence: companyRecommendationMatchIntelligenceSchema.nullable().optional(),
   status: z.enum(["Saved", "Applied", "Interviewing", "Rejected", "Offer", "NotInterested"]),
 });
 export type SaveCompanyRecommendationRequest = z.infer<typeof saveCompanyRecommendationRequestSchema>;
